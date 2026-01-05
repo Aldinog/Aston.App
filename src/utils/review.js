@@ -287,11 +287,21 @@ AI Review:
         if (!aiResponse) aiResponse = "Analisa AI tidak tersedia saat ini.";
 
         // Strip markdown code blocks if any
-        return aiResponse.replace(/```/g, '').trim();
+        const cleanNarrative = aiResponse.replace(/```/g, '').trim();
+
+        return {
+            score: score,
+            details: details,
+            narrative: cleanNarrative,
+            category: category,
+            color: color,
+            trend: details.trend, // Explicit for frontend convenience
+            flow: details.proxy     // Explicit for frontend convenience
+        };
 
     } catch (err) {
         console.error("Generate Review Error:", err);
-        return `❌ Gagal memproses review. Error: ${err.message}`;
+        throw err; // Propagate error to be handled by API
     }
 }
 

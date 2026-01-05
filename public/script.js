@@ -913,6 +913,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             submitReviewBtn.innerText = 'Analyzing...';
             submitReviewBtn.disabled = true;
 
+            // --- 1. SHOW LOADING ANIMATION ---
+            const formBody = document.getElementById('review-form-body');
+            const resultContainer = document.getElementById('review-result-container');
+            formBody.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+
+            resultContainer.innerHTML = `
+                <div class="loading-pulse" style="padding: 40px 20px;">
+                    <div class="spinner" style="width: 50px; height: 50px; border-width: 4px;"></div>
+                    <div style="margin-top: 20px; font-size: 1.1em; color: #94a3b8;">Analyzing ${symbol}...</div>
+                    <div style="font-size: 0.8em; color: #64748b; margin-top: 5px;">AI is calculating score & risk</div>
+                </div>
+            `;
+
             try {
                 const response = await fetch('/api/web', {
                     method: 'POST',
@@ -926,22 +940,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                     })
                 });
 
-                const data = await response.text();
+                // --- 2. HANDLE JSON RESPONSE ---
+                const res = await response.json();
 
-                // Save for Detail View
-                localStorage.setItem('temp_review_result', data);
+                if (!res.success || !res.data) {
+                    throw new Error(res.error || "Gagal mengambil data analisis.");
+                }
 
-                // --- PARSE AND VISUALIZE RESULT ---
-                const formBody = document.getElementById('review-form-body');
-                const resultContainer = document.getElementById('review-result-container');
-                formBody.classList.add('hidden');
-                resultContainer.classList.remove('hidden');
+                const data = res.data;
 
-                // Extract Score (More robust regex)
-                const scoreMatch = data.match(/Score:\s*(\d+)/i);
-                const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+                // Save for Detail View (Narrative)
+                localStorage.setItem('temp_review_result', data.narrative);
 
-                // Determine Color
+                // --- 3. VISUALIZE RESULT (MINIMALIST) ---
+                const score = data.score || 0;
+
+                // Determine Color (or use backend provided color/category)
                 let scoreColor = '#ef4444'; // Red
                 if (score >= 80) scoreColor = '#22c55e'; // Green
                 else if (score >= 60) scoreColor = '#eab308'; // Yellow
@@ -950,58 +964,50 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Stroke calc for radial progress (C ≈ 251.2)
                 const offset = 251.2 - ((Math.min(score, 100) / 100) * 251.2);
 
-                // Parsing Logic for Badges
-                const trend = (data.match(/Trend: (.*)/) || [null, 'Unknown'])[1];
-                const flow = (data.match(/Broker Flow: (.*)/) || [null, 'Unknown'])[1];
+                const trend = data.trend || 'Unknown';
+                const flow = data.flow || 'Unknown';
 
-                // Safety Check Logic
-                const isSafe = !data.includes("CRITICAL WARNING");
-
-                // Note: We deliberately do NOT show the narrative here as per user request.
-                // It is saved for the "See Detail" view.
+                // Safety Check
+                const isSafe = !data.narrative.includes("CRITICAL WARNING");
 
                 resultContainer.innerHTML = `
                     <div style="text-align:center; padding: 10px;">
-                        <h4 style="margin-bottom:15px; color:${reviewAction === 'BUY' ? '#22c55e' : '#ef4444'}; font-size:1.2rem;">
+                        <h4 style="margin-bottom:15px; color:${reviewAction === 'BUY' ? '#22c55e' : '#ef4444'}; font-size:1.5rem; letter-spacing: 1px;">
                             ${reviewAction} ${symbol}
                         </h4>
                         
-                        <div class="score-circle-container">
+                        <div class="score-circle-container" style="transform: scale(1.1); margin: 20px auto;">
                              <svg class="meter-svg" viewBox="0 0 100 100">
                                 <circle class="meter-bg" cx="50" cy="50" r="40"></circle>
                                 <circle class="meter-progress" cx="50" cy="50" r="40" style="stroke: ${scoreColor}; stroke-dashoffset: ${offset};"></circle>
                             </svg>
-                            <div class="score-text-center">${score}</div>
-                            <div class="score-label">SCORE</div>
+                            <div class="score-text-center" style="font-size: 2.5rem;">${score}</div>
+                            <div class="score-label" style="margin-top: -5px;">SCORE</div>
                         </div>
 
-                        <div class="review-grid">
-                            <div class="review-badge ${trend && (trend.includes('Bull') || trend.includes('Up')) ? 'positive' : 'negative'}">
+                        <div class="review-grid" style="margin-top: 25px; gap: 10px;">
+                            <div class="review-badge ${trend.includes('Bull') || trend.includes('Up') ? 'positive' : 'negative'}" style="justify-content: center;">
                                 <i class="fas fa-chart-line"></i>
                                 <span>${trend}</span>
                             </div>
-                            <div class="review-badge ${flow && flow.includes('Accum') ? 'positive' : 'negative'}">
-                                <i class="fas fa-user-secret"></i>
+                            <div class="review-badge ${flow.includes('Accum') || flow.includes('Buyer') ? 'positive' : 'negative'}" style="justify-content: center;">
+                                <i class="fas fa-coins"></i>
                                 <span>${flow}</span>
                             </div>
                         </div>
 
                          ${!isSafe ? `
-                            <div style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 15px; border: 1px solid rgba(239, 68, 68, 0.4);">
-                                <i class="fas fa-exclamation-triangle"></i> WARNING: Distribution Flow Detect!
+                            <div style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-top: 15px; border: 1px solid rgba(239, 68, 68, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i class="fas fa-exclamation-triangle"></i> <span>Distribution Detect!</span>
                             </div>
                         ` : ''}
-
-                        <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 10px; font-style: italic;">
-                            Click "See Detail" for full AI analysis...
-                        </div>
                         
-                        <div style="display:flex; gap:10px; margin-top:20px;">
-                            <button class="glass-btn btn-retry-review" style="flex:1; font-size: 0.85rem; padding: 12px;">
-                                <i class="fas fa-arrow-left"></i> Retry
+                        <div style="display:flex; gap:10px; margin-top:30px;">
+                            <button class="glass-btn btn-retry-review" style="flex:1; padding: 14px; border: 1px solid rgba(255,255,255,0.2);">
+                                <i class="fas fa-undo"></i> Retry
                             </button>
-                            <button class="glass-btn btn-detail-review" style="flex:1; font-size: 0.85rem; padding: 12px; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4);">
-                                <i class="fas fa-comments"></i> See Detail
+                            <button class="glass-btn btn-detail-review" style="flex:1.5; padding: 14px; background: #3b82f6; border: none; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);">
+                                <i class="fas fa-align-left"></i> See Detail
                             </button>
                         </div>
                     </div>
@@ -1022,12 +1028,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                     };
                 }
 
-                // Removed Typewriter Effect since we don't show text anymore
-
-
             } catch (err) {
                 console.error(err);
-                alert('Error analyzing trade');
+                // Show Error State
+                resultContainer.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">😵</div>
+                        <h4 style="color: #ef4444; margin-bottom: 10px;">Analysis Failed</h4>
+                        <p style="color: #94a3b8; font-size: 0.9em;">${err.message}</p>
+                        <button class="glass-btn btn-retry-review" style="margin-top: 20px; width: 100%;">Try Again</button>
+                    </div>
+                `;
+                const retryBtn = resultContainer.querySelector('.btn-retry-review');
+                if (retryBtn) retryBtn.onclick = () => {
+                    document.getElementById('review-result-container').classList.add('hidden');
+                    document.getElementById('review-form-body').classList.remove('hidden');
+                };
             } finally {
                 submitReviewBtn.innerText = originalText;
                 submitReviewBtn.disabled = false;

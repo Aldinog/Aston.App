@@ -716,9 +716,14 @@ module.exports = async (req, res) => {
                 const { generateReview } = await import('../src/utils/review.js');
                 const { entry, sl, mode } = req.body;
                 if (!entry || !mode) {
-                    result = "❌ Data entry dan action (BUY/SELL) wajib diisi.";
+                    return res.status(400).json({ error: "❌ Data entry dan action (BUY/SELL) wajib diisi." });
                 } else {
-                    result = await generateReview(mode, symbol, entry, sl);
+                    const reviewResult = await generateReview(mode, symbol, entry, sl);
+                    return res.status(200).json({
+                        success: true,
+                        data: reviewResult,
+                        active_theme: activeTheme
+                    });
                 }
                 break;
 
