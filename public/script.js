@@ -952,7 +952,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Save for Detail View (Narrative)
                 localStorage.setItem('temp_review_result', data.narrative);
 
-                // --- 3. VISUALIZE RESULT (MINIMALIST) ---
+                // --- 3. VISUALIZE RESULT (SPEEDOMETER GAUGE) ---
                 const score = data.score || 0;
 
                 // Determine Color (or use backend provided color/category)
@@ -961,8 +961,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 else if (score >= 60) scoreColor = '#eab308'; // Yellow
                 else if (score >= 40) scoreColor = '#f97316'; // Orange
 
-                // Stroke calc for radial progress (C ≈ 251.2)
-                const offset = 251.2 - ((Math.min(score, 100) / 100) * 251.2);
+                // Gauge Calculations (Semi-Circle)
+                // We use stroke-dasharray for the arc. The arc path length is exactly PI * radius.
+                // Formula: (score / 100) * circumference
+                const circumference = Math.PI * 35; // Radius 35
+                const dashArray = circumference;
+                const dashOffset = circumference - ((score / 100) * circumference);
+
+                // Needle Rotation (0 score = -90deg (left), 100 score = 90deg (right)) -> Total 180 sweep
+                // We start with needle pointing UP (0deg), so range is -90 to +90.
+                const needleRotation = ((score / 100) * 180) - 90;
 
                 const trend = data.trend || 'Unknown';
                 const flow = data.flow || 'Unknown';
@@ -976,13 +984,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                             ${reviewAction} ${symbol}
                         </h4>
                         
-                        <div class="score-circle-container" style="transform: scale(1.1); margin: 20px auto;">
-                             <svg class="meter-svg" viewBox="0 0 100 100">
-                                <circle class="meter-bg" cx="50" cy="50" r="40"></circle>
-                                <circle class="meter-progress" cx="50" cy="50" r="40" style="stroke: ${scoreColor}; stroke-dashoffset: ${offset};"></circle>
-                            </svg>
-                            <div class="score-text-center" style="font-size: 2.5rem;">${score}</div>
-                            <div class="score-label" style="margin-top: -5px;">SCORE</div>
+                        <div class="gauge-container" style="position: relative; width: 220px; height: 130px; margin: 0 auto;">
+                             <svg class="gauge-svg" viewBox="0 0 100 60" style="width: 100%; height: 100%;">
+                                <!-- Background Arc (Grey) -->
+                                <path d="M 15 50 A 35 35 0 0 1 85 50" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round" />
+                                
+                                <!-- Progress Arc (Colored) -->
+                                <path d="M 15 50 A 35 35 0 0 1 85 50" fill="none" stroke="${scoreColor}" stroke-width="8" stroke-linecap="round" 
+                                      style="stroke-dasharray: ${dashArray}; stroke-dashoffset: ${dashOffset}; transition: stroke-dashoffset 1s ease-out;" />
+                                
+                                <!-- Needle Group -->
+                                <g style="transform-origin: 50px 50px; transform: rotate(${needleRotation}deg); transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);">
+                                    <polygon points="50,15 47,50 53,50" fill="#f8fafc" />
+                                    <circle cx="50" cy="50" r="4" fill="#f8fafc" />
+                                </g>
+
+                                <!-- Score Text -->
+                                <text x="50" y="35" text-anchor="middle" fill="white" font-size="14" font-weight="bold" style="filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));">${score}</text>
+                                <text x="50" y="58" text-anchor="middle" fill="#94a3b8" font-size="6">SCORE</text>
+                             </svg>
                         </div>
 
                         <div class="review-grid" style="margin-top: 25px; gap: 10px;">
@@ -1024,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const detailBtn = resultContainer.querySelector('.btn-detail-review');
                 if (detailBtn) {
                     detailBtn.onclick = () => {
-                        window.location.href = `chat.html?mode=review_detail`;
+                        window.location.href = `chat.html?mode=review_detail&symbol=${symbol}`;
                     };
                 }
 

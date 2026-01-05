@@ -20,15 +20,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const mode = urlParams.get('mode'); // 'analysis' | 'signal' | 'proxy'
     let symbol = urlParams.get('symbol');
 
-    if (!symbol) {
+    if (!symbol && mode !== 'review_detail') {
         addAiMessage("Error: No symbol provided.");
         return;
-    }
-
-    // Auto-Normalize Symbol (BUVA -> BUVA.JK)
-    // Assumes IDX context primarily.
-    if (symbol && !symbol.includes('.') && /^[A-Z]{4}$/.test(symbol)) {
-        symbol = `${symbol}.JK`;
     }
 
     // Auto-Normalize Symbol (BUVA -> BUVA.JK)
