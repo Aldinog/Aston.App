@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aston Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Theme Engine -->
+    <script src="themes/theme-engine.js"></script>
+    <style>
+        .admin-container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .watchlist-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .watchlist-table th,
+        .watchlist-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .status-pill {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .icon-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .add-symbol-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .add-symbol-form input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            outline: none;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            color: #fff;
+        }
+
+        /* Visibility Toggles */
+        .collapsible-container {
+            max-height: 300px;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            position: relative;
+        }
+
+        .collapsible-container.expanded {
+            max-height: 2000px;
+        }
+
+        .fade-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.8), transparent);
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .expanded .fade-overlay {
+            opacity: 0;
+        }
+
+        .show-toggle-btn {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .show-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        /* User Table accents */
+        .user-id {
+            font-family: monospace;
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        .live-status-active {
+            color: #10b981;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .live-status-inactive {
+            color: #64748b;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            .admin-container {
+                padding: 12px;
+            }
+
+            .dashboard-grid {
+                gap: 15px;
+                margin-top: 15px;
+            }
+
+            .add-symbol-form {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .add-symbol-form input,
+            .add-symbol-form select {
+                width: 100%;
+            }
+
+            .add-symbol-form button {
+                width: 100% !important;
+                padding: 12px !important;
+            }
+
+            #permissions-container {
+                grid-template-columns: 1fr !important;
+            }
+
+            .watchlist-table th,
+            .watchlist-table td {
+                padding: 10px 8px;
+                font-size: 0.8rem;
+            }
+
+            .action-btns {
+                gap: 4px;
+            }
+
+            .icon-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+
+            .brand h1 {
+                font-size: 1.1rem;
+            }
+
+            .status-badge {
+                padding: 4px 10px;
+                font-size: 0.7rem;
+            }
+
+            .glass-card {
+                padding: 16px;
+            }
+
+            .glass-card h3 {
+                font-size: 1rem;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="snow-container" id="snow-container"></div>
+    <canvas id="fireworks-canvas"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; display:none;"></canvas>
+    <div class="ambient-glow"></div>
+
+    <div class="admin-container">
+        <a href="index.html" class="back-btn">
+            <i class="fas fa-chevron-left"></i> Kembali ke App
+        </a>
+
+        <div class="app-header">
+            <div class="brand">
+                <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+                <h1>Admin Dashboard</h1>
+            </div>
+            <div class="status-badge" id="app-status-badge">
+                <span class="status-dot"></span> <span id="status-text">Online</span>
+            </div>
+        </div>
+
+        <div class="dashboard-grid stats-row" style="margin-top: 10px; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+            <!-- User Stats [NEW] -->
+            <div class="glass-card stat-card" style="padding: 15px; border-left: 4px solid #10b981;">
+                <div
+                    style="background: rgba(16, 185, 129, 0.1); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1rem; flex-shrink: 0;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">USER AKTIF</div>
+                    <div id="active-users-count"
+                        style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-top: 2px;">0</div>
+                </div>
+            </div>
+
+            <div class="glass-card stat-card" style="padding: 15px; border-left: 4px solid #6366f1;">
+                <div
+                    style="background: rgba(99, 102, 241, 0.1); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #6366f1; font-size: 1rem; flex-shrink: 0;">
+                    <i class="fas fa-satellite-dish"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">USER ONLINE</div>
+                    <div id="online-users-count"
+                        style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-top: 2px;">0</div>
+                </div>
+            </div>
+
+            <div class="glass-card stat-card" style="padding: 15px; border-left: 4px solid #ef4444;">
+                <div
+                    style="background: rgba(239, 68, 68, 0.1); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 1rem; flex-shrink: 0;">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">USER NON-AKTIF</div>
+                    <div id="inactive-users-count"
+                        style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-top: 2px;">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- System Controls -->
+            <div class="glass-card">
+                <h3>System Controls</h3>
+
+                <!-- Admin Maintenance Countdown (Relocated for Visibility) -->
+                <div id="admin-mt-countdown"
+                    style="margin-top:15px; margin-bottom:15px; text-align:center; font-weight:600; color:#fbbf24; background:rgba(251, 191, 36, 0.1); padding:15px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.3); display:none;">
+                    <i class="fas fa-clock" style="margin-right:8px;"></i> <span id="mt-label">Maintenance Ends
+                        in:</span>
+                    <div id="amt-timer"
+                        style="font-size:1.4em; font-weight:700; color:#fff; margin-top:5px; letter-spacing:1px;">
+                        00:00:00</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px;">
+                    <button id="force-scan-btn" class="glass-btn highlight-btn">
+                        <i class="fas fa-satellite-dish"></i>
+                        <span class="btn-text">Force Scan</span>
+                    </button>
+                    <button id="toggle-mt-btn" class="glass-btn">
+                        <i class="fas fa-tools"></i>
+                        <span class="btn-text" id="mt-btn-text">Maintenance: OFF</span>
+                    </button>
+                </div>
+
+                <!-- Maintenance Whitelist [NEW] -->
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <h4 style="font-size: 0.85rem; color: #fbbf24; margin-bottom: 10px;">Maintenance Whitelist (User
+                        Pengecualian)</h4>
+                    <div class="add-symbol-form" style="margin-bottom: 12px;">
+                        <input type="number" id="whitelist-id-input" placeholder="ID Telegram untuk Pengecualian">
+                        <button id="add-whitelist-btn" class="glass-btn primary-btn"
+                            style="width: auto; padding: 0 15px; margin: 0;">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="whitelist-tags" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <!-- Tags populated via JS -->
+                        <span style="font-size: 0.75rem; color: #64748b; font-style: italic;">Belum ada
+                            pengecualian</span>
+                    </div>
+                </div>
+
+                <!-- Live Mode Whitelist [NEW] -->
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <h4 style="font-size: 0.85rem; color: #22c55e; margin-bottom: 10px;">Live Mode Whitelist (Smart
+                        Chart Real-time)</h4>
+                    <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">ID yang diizinkan mendapatkan
+                        Live Mode (termasuk Admin).</p>
+                    <div class="add-symbol-form" style="margin-bottom: 12px;">
+                        <input type="number" id="live-whitelist-id-input" placeholder="ID Telegram untuk Live Mode">
+                        <button id="add-live-whitelist-btn" class="glass-btn primary-btn"
+                            style="width: auto; padding: 0 15px; margin: 0; background: #22c55e; border-color: #22c55e;">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="live-whitelist-tags" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <!-- Tags populated via JS -->
+                        <span style="font-size: 0.75rem; color: #64748b; font-style: italic;">Belum ada ID
+                            terdaftar</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cooldown System Manager [NEW] -->
+            <div class="glass-card" style="border: 1px solid rgba(251, 191, 36, 0.3);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                    <div
+                        style="background: rgba(251, 191, 36, 0.1); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-size: 1.2rem;">
+                        <i class="fas fa-snowflake"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0;">Yahoo Finance Cooldown</h3>
+                        <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">Stop data fetching temporarily during
+                            limit.</p>
+                    </div>
+                </div>
+
+                <div
+                    style="display: flex; gap: 12px; align-items: center; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.2);">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; color: #fbbf24; font-size: 0.9rem;">COOLDOWN MODE</div>
+                        <div id="cooldown-timer"
+                            style="font-size: 0.75rem; color: #fbbf24; font-weight: 600; display:none;">Ends in: 00:00
+                        </div>
+                        <div style="font-size: 0.75rem; color: #94a3b8;">User akan melihat data dari database/cache
+                            saja.</div>
+                    </div>
+                    <button id="toggle-cooldown-btn" class="glass-btn"
+                        style="margin:0; width: auto; padding: 8px 16px;">
+                        <span id="cooldown-status-text">OFF</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- IP Diagnostic Card [NEW] -->
+            <div class="glass-card" style="border: 1px solid rgba(99, 102, 241, 0.3);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                    <div
+                        style="background: rgba(99, 102, 241, 0.1); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #6366f1; font-size: 1.2rem;">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0;">IP Diagnostics</h3>
+                        <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">Monitor Yahoo Finance connectivity.
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div
+                        style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Connection</div>
+                        <div id="yf-status-text" style="font-weight: 700; color: #10b981;">Checking...</div>
+                    </div>
+                    <div
+                        style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">IP Address</div>
+                        <div id="server-ip-text" style="font-weight: 700; color: #fff; font-size: 0.8rem;">-. -. -. -
+                        </div>
+                    </div>
+                </div>
+
+                <button id="check-yf-btn" class="glass-btn"
+                    style="width: 100%; margin-top: 10px; font-size: 0.8rem; padding: 8px;">
+                    <i class="fas fa-sync-alt" style="margin-right: 5px;"></i> Re-check Connection
+                </button>
+            </div>
+
+            <!-- Seasonal Theme Manager -->
+            <div class="glass-card">
+                <h3>Seasonal Theme Manager</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">
+                    Ubah suasana aplikasi sesuai hari raya.
+                </p>
+                <div class="add-symbol-form">
+                    <select id="theme-selector"
+                        style="flex: 1; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; outline: none;">
+                        <option value="default">Default (Premium Dark)</option>
+                        <option value="christmas">Christmas (Natal)</option>
+                        <option value="newyear">New Year (Tahun Baru)</option>
+                        <option value="ramadan">Ramadan</option>
+                        <option value="idulfitri">Idul Fitri</option>
+                        <option value="galaxy">Galaxy (Modern/Premium)</option>
+                    </select>
+                    <button id="update-theme-btn" class="glass-btn primary-btn"
+                        style="margin:0; width: auto; padding: 0 20px;">
+                        Set Theme
+                    </button>
+                </div>
+            </div>
+
+            <!-- Subscription & Feature Controls [NEW] -->
+            <div class="glass-card">
+                <h3>Subscription & Paywall Controls</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+                    Aktifkan pembatasan akses (Paywall) dan tentukan fitur mana yang PRO.
+                </p>
+
+                <div
+                    style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.2);">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; color: #fbbf24; font-size: 0.9rem;">PAYWALL MODE</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8;">Aktifkan untuk membatasi akses fitur PRO.</div>
+                    </div>
+                    <button id="toggle-paywall-btn" class="glass-btn" style="margin:0; width: auto; padding: 8px 16px;">
+                        <span id="paywall-status-text">OFF</span>
+                    </button>
+                </div>
+
+                <div class="feature-permissions-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <!-- Features will be listed here with Standard/PRO toggles -->
+                    <div id="permissions-container"
+                        style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <!-- Populate via JS -->
+                    </div>
+                </div>
+
+                <button id="save-permissions-btn" class="glass-btn primary-btn" style="margin-top: 20px;">
+                    <i class="fas fa-save" style="margin-right: 8px;"></i> Simpan Pengaturan Fitur
+                </button>
+            </div>
+
+            <!-- Watchlist Manager -->
+            <div class="glass-card">
+                <h3>Watchlist Manager</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+                    Kelola emiten yang akan dipantau oleh scanner otomatis.
+                </p>
+
+                <div class="add-symbol-form" style="margin-bottom: 10px;">
+                    <input type="text" id="watchlist-search-input" placeholder="Cari emiten di watchlist...">
+                    <div class="icon-btn"
+                        style="height: 44px; width: 44px; border-radius: 12px; background: rgba(255,255,255,0.03);">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+
+                <div class="add-symbol-form">
+                    <input type="text" id="new-symbol-input" placeholder="Contoh: BBCA atau GOTO.JK">
+                    <button id="add-symbol-btn" class="glass-btn primary-btn"
+                        style="margin:0; width: auto; padding: 0 20px;">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button id="active-all-btn" class="glass-btn"
+                        style="flex: 1; border-color: #10b981; color: #10b981; font-size: 0.8rem;">
+                        <i class="fas fa-play" style="margin-right: 5px;"></i> Active All
+                    </button>
+                    <button id="pause-all-btn" class="glass-btn"
+                        style="flex: 1; border-color: #f59e0b; color: #f59e0b; font-size: 0.8rem;">
+                        <i class="fas fa-pause" style="margin-right: 5px;"></i> Pause All
+                    </button>
+                </div>
+
+                <div id="watchlist-wrapper" class="collapsible-container">
+                    <div style="overflow-x: auto;">
+                        <table class="watchlist-table">
+                            <thead>
+                                <tr>
+                                    <th>Emiten</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="watchlist-body">
+                                <!-- Data populated by JS -->
+                                <tr>
+                                    <td colspan="3"
+                                        style="text-align:center; padding: 40px; color: var(--text-secondary);">
+                                        Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="fade-overlay"></div>
+                </div>
+                <button id="watchlist-toggle-btn" class="show-toggle-btn">
+                    <span>Show All</span> <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+
+            <!-- User Management -->
+            <div class="glass-card">
+                <h3>User Management (Subscription)</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+                    Cari user dan berikan akses PRO atau perpanjang masa aktif.
+                </p>
+
+                <div class="add-symbol-form" style="margin-bottom: 10px;">
+                    <input type="text" id="user-search-input" placeholder="Cari ID Telegram User...">
+                    <div class="icon-btn"
+                        style="height: 44px; width: 44px; border-radius: 12px; background: rgba(255,255,255,0.03);">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+
+                <div class="add-symbol-form"
+                    style="background: rgba(99, 102, 241, 0.05); padding: 10px; border-radius: 12px; border: 1px dashed rgba(99, 102, 241, 0.3);">
+                    <input type="number" id="new-user-id-input" placeholder="Tambah ID Baru">
+                    <button id="add-user-btn" class="glass-btn primary-btn"
+                        style="margin:0; width: auto; padding: 0 20px;">
+                        <i class="fas fa-user-plus"></i>
+                    </button>
+                </div>
+
+                <div id="users-wrapper" class="collapsible-container">
+                    <div style="overflow-x: auto;">
+                        <table class="watchlist-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Status / Expiry</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-body">
+                                <!-- Data populated by JS -->
+                                <tr>
+                                    <td colspan="3"
+                                        style="text-align:center; padding: 40px; color: var(--text-secondary);">
+                                        Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="fade-overlay"></div>
+                </div>
+                <button id="users-toggle-btn" class="show-toggle-btn">
+                    <span>Show All</span> <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Auth Protection Overlay -->
+    <div id="auth-overlay" class="modal-overlay">
+        <div class="glass-card auth-box">
+            <div class="spinner"></div>
+            <p id="auth-status">Verifikasi Akses Admin...</p>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Maintenance Modal -->
+    <div id="mt-modal" class="modal-overlay hidden">
+        <div class="glass-card modal-body">
+            <h3>Maintenance Mode</h3>
+            <p>Aktifkan mode maintenance? User biasa tidak akan bisa login.</p>
+
+            <div class="input-group" style="margin-top: 15px;">
+                <label style="display:block; margin-bottom:5px; font-size:0.9em; color:#94a3b8;">Jam Selesai
+                    (Opsional)</label>
+                <input type="time" id="mt-time-input"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white;">
+                <div style="font-size: 0.8em; color: #64748b; margin-top: 5px;">Format 24 Jam WIB. Kosongkan untuk
+                    manual off.</div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button id="cancel-mt-btn" class="glass-btn"
+                    style="border-color: #ef4444; color: #ef4444;">Batal</button>
+                <button id="confirm-mt-btn" class="glass-btn primary-btn">Aktifkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expiry Modal -->
+    <div id="expiry-modal" class="modal-overlay hidden">
+        <div class="glass-card modal-body">
+            <h3>Set Expiry Date</h3>
+            <p id="expiry-user-label">Mengatur masa aktif untuk user...</p>
+
+            <div class="input-group" style="margin-top: 15px;">
+                <label style="display:block; margin-bottom:5px; font-size:0.9em; color:#94a3b8;">Tanggal & Jam</label>
+                <input type="datetime-local" id="expiry-date-input"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white;">
+                <div style="font-size: 0.8em; color: #64748b; margin-top: 5px;">User akan otomatis menjadi Standard
+                    setelah waktu ini.</div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button id="cancel-expiry-btn" class="glass-btn"
+                    style="border-color: #ef4444; color: #ef4444;">Batal</button>
+                <button id="confirm-expiry-btn" class="glass-btn primary-btn">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>

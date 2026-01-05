@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Bot - ASTON|GROUP</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Theme Engine initialized here -->
+    <script src="themes/theme-engine.js"></script>
+</head>
+
+<body class="premium-theme">
+    <div class="snow-container" id="snow-container"></div>
+    <canvas id="fireworks-canvas"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; display:none;"></canvas>
+    <canvas id="confetti-canvas"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2000; display:none;"></canvas>
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="modal-overlay">
+        <div class="auth-box glass-card">
+            <!-- Christmas Tree -->
+            <div id="christmas-tree" class="christmas-tree hidden">
+                <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Trunk -->
+                    <rect x="42" y="75" width="16" height="20" fill="#854d0e" />
+                    <!-- Leaves Bottom -->
+                    <path d="M10 75 L50 35 L90 75 H10 Z" fill="#15803d" />
+                    <!-- Leaves Middle -->
+                    <path d="M20 55 L50 20 L80 55 H20 Z" fill="#166534" />
+                    <!-- Leaves Top -->
+                    <path d="M30 35 L50 10 L70 35 H30 Z" fill="#14532d" />
+                    <!-- Star -->
+                    <path d="M50 2 L53 12 L63 12 L55 18 L58 28 L50 22 L42 28 L45 18 L37 12 H47 Z" fill="#fbbf24" />
+                    <!-- Ornaments -->
+                    <circle cx="30" cy="70" r="3" fill="#ef4444" />
+                    <circle cx="70" cy="70" r="3" fill="#facc15" />
+                    <circle cx="40" cy="50" r="3" fill="#ef4444" />
+                    <circle cx="60" cy="50" r="3" fill="#fff" />
+                </svg>
+            </div>
+            <!-- Christmas Text -->
+            <div id="christmas-text" class="christmas-text hidden">Selamat Natal</div>
+            <!-- New Year Text -->
+            <div id="newyear-text" class="newyear-text hidden">Selamat Tahun Baru<br><span
+                    style="font-size:0.8em; color:#facc15">2026</span></div>
+            <!-- Ramadan Text -->
+            <div id="ramadan-text" class="ramadan-text hidden">Ramadan Kareem</div>
+
+            <div class="spinner"></div>
+            <p id="auth-status">Authenticating with Telegram...</p>
+        </div>
+    </div>
+
+    <div class="ambient-glow"></div>
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M2 17L12 22L22 17" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M2 12L12 17L22 12" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <h1>Astonmology</h1>
+            </div>
+            <div class="header-right" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
+                <!-- Admin Button (Hidden by default) -->
+                <button id="admin-toggle-btn" class="admin-badge-btn hidden">
+                    <i class="fas fa-shield-alt"></i> ADMIN
+                </button>
+
+                <div class="status-badge" id="app-status-badge">
+                    <span class="status-dot"></span>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- Market Summary Header -->
+        <div class="glass-card market-summary-card">
+            <div class="market-item">
+                <span class="label">IHSG</span>
+                <span class="value" id="market-ihsg">Loading...</span>
+            </div>
+            <div class="divider"></div>
+            <div class="market-item">
+                <span class="label">USD/IDR</span>
+                <span class="value" id="market-usd">Loading...</span>
+            </div>
+        </div>
+
+        <main class="content-area">
+            <!-- Watchlist Content -->
+            <div id="watchlist-container" class="watchlist-grid">
+                <!-- Watchlist items will be injected here -->
+                <div class="loading-pulse">
+                    <div class="spinner"></div>
+                    <span>Memuat Watchlist... </span>
+                </div>
+            </div>
+
+            <!-- Output Area for Tools (Transient Result) -->
+            <div class="glass-card output-card hidden" id="terminal-card">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Analysis Result</h3>
+                    <button class="close-btn" id="close-terminal">✕</button>
+                </div>
+                <div class="output-content" id="terminal-output"></div>
+            </div>
+
+            <div class="info-card">
+                <p>Powered by Advanced AI Models & Real-time Market Data</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="review-modal" class="modal-overlay hidden">
+        <div class="glass-card modal-content">
+            <button class="icon-btn" id="close-review">✕</button>
+            <div class="card-header">
+                <h3>Review Trade Setup</h3>
+            </div>
+            <div class="modal-body" id="review-form-body">
+                <div class="input-wrapper">
+                    <label>ACTION</label>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-value="BUY">BUY</button>
+                        <button class="toggle-btn" data-value="SELL">SELL</button>
+                    </div>
+                </div>
+                <div class="input-wrapper">
+                    <label>ENTRY PRICE</label>
+                    <input type="number" id="review-entry" placeholder="e.g. 4500">
+                </div>
+                <div class="input-wrapper">
+                    <label>STOP LOSS (Optional)</label>
+                    <input type="number" id="review-sl" placeholder="e.g. 4300">
+                </div>
+                <button class="glass-btn primary-btn" id="submit-review">
+                    Analyze Setup
+                </button>
+            </div>
+            <!-- Dynamic Result Container (Hidden Initially) -->
+            <div id="review-result-container" class="hidden" style="animation: fadeInUp 0.4s ease;">
+                <!-- Content Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD SYMBOL / TOOLS MENU MODAL -->
+    <div id="add-menu-modal" class="modal-overlay hidden" style="align-items: flex-end;">
+        <div class="glass-card modal-content bottom-sheet"
+            style="max-width: 500px; width:100%; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+            <div class="drag-handle"></div>
+            <div class="card-header"
+                style="justify-content: space-between; display: flex; align-items: center; margin-bottom: 20px;">
+                <h3>Add Symbol</h3>
+                <button class="close-btn" id="close-add-menu">✕</button>
+            </div>
+
+            <div class="input-wrapper">
+                <label for="ticker-input">CARI / TAMBAH TIKER SAHAM</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="ticker-input" placeholder="BBCA" maxlength="6"
+                        style="text-align: left; font-size: 1.2rem;">
+                    <button id="confirm-add-btn" class="glass-btn primary-btn"
+                        style="width: auto; margin:0; padding: 0 20px;">
+                        Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Clean Add Menu: Tools removed (Available in Long Press) -->
+        </div>
+    </div>
+
+    <!-- WATCHLIST CONTEXT MENU (Long Press) -->
+    <div id="watchlist-context-modal" class="modal-overlay hidden" style="align-items: flex-end;">
+        <div class="glass-card modal-content bottom-sheet"
+            style="max-width: 500px; width:100%; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+            <div class="drag-handle"></div>
+            <div class="card-header"
+                style="justify-content: space-between; display: flex; align-items: center; margin-bottom: 20px;">
+                <h3 id="context-symbol-title">Actions</h3>
+                <button class="close-btn" id="close-context-menu">✕</button>
+            </div>
+
+            <div class="grid-actions" style="grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                <!-- Reusing generic class but with specific IDs or data attributes for JS to handle -->
+                <button class="glass-btn highlight-btn" id="ctx-btn-chart">
+                    <span class="btn-icon">📈</span>
+                    <span class="btn-text">Chart</span>
+                </button>
+                <button class="glass-btn" id="ctx-btn-analysis">
+                    <span class="btn-icon">✨</span>
+                    <span class="btn-text">AI</span>
+                </button>
+                <button class="glass-btn" id="ctx-btn-fund">
+                    <span class="btn-icon">🏛</span>
+                    <span class="btn-text">Fundm</span>
+                </button>
+                <button class="glass-btn" id="ctx-btn-signal">
+                    <span class="btn-icon">📡</span>
+                    <span class="btn-text">Signal</span>
+                </button>
+                <button class="glass-btn" id="ctx-btn-avg">
+                    <span class="btn-icon">🧮</span>
+                    <span class="btn-text">Calc</span>
+                </button>
+                <button class="glass-btn" id="ctx-btn-profile">
+                    <span class="btn-icon">🏢</span>
+                    <span class="btn-text">Profil</span>
+                </button>
+                <button class="glass-btn" id="ctx-btn-proxy">
+                    <span class="btn-icon">🕵️</span>
+                    <span class="btn-text">Bandar</span>
+                </button>
+                <button class="glass-btn" id="ctx-btn-review"
+                    style="background: linear-gradient(135deg, rgba(8, 145, 178, 0.15), rgba(79, 70, 229, 0.15)); border-color: rgba(6, 182, 212, 0.4);">
+                    <div
+                        style="position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.3), transparent 70%); animation: pulse-glow 3s infinite;">
+                    </div>
+                    <span class="btn-icon" style="position:relative; z-index:2;">🔎</span>
+                    <span class="btn-text" style="position:relative; z-index:2;">Review</span>
+                </button>
+                <button class="glass-btn" id="ctx-btn-delete" style="border-color: #ef4444; color: #ef4444;">
+                    <span class="btn-icon">🗑</span>
+                    <span class="btn-text">Hapus</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Paywall / PRO Required Overlay -->
+    <div id="paywall-overlay" class="modal-overlay hidden" style="z-index: 2147483647; backdrop-filter: blur(20px);">
+        <div class="glass-card paywall-overlay" style="border: 2px solid rgba(245, 158, 11, 0.3);">
+            <div class="paywall-icon">💎</div>
+            <div class="paywall-body">
+                <h2>Exclusive PRO Feature</h2>
+                <p id="paywall-message">
+                    Fitur ini khusus untuk member PRO. Upgrade sekarang untuk akses analisis premium dan signal
+                    real-time.
+                </p>
+                <button class="upgrade-btn" onclick="window.open('https://t.me/ALstayr', '_blank')">
+                    <span>Upgrade ke PRO Now</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <div style="margin-top: 20px;">
+                    <button class="glass-btn"
+                        onclick="document.getElementById('paywall-overlay').classList.add('hidden')"
+                        style="width: 100%; padding: 12px; font-size: 0.8rem; border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #fff;">
+                        Mungkin Nanti
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Overlay (Popup) -->
+    <div id="maintenance-overlay" class="modal-overlay hidden"
+        style="z-index: 2147483647; backdrop-filter: blur(20px);">
+        <div class="glass-card"
+            style="text-align: center; max-width: 400px; padding: 40px 30px; border: 2px solid rgba(245, 158, 11, 0.3);">
+            <div style="font-size: 4rem; margin-bottom: 20px; color: #f59e0b;">🛠</div>
+            <h2 style="margin-bottom: 15px; color: #fff;">Under Maintenance</h2>
+            <div id="mt-status-params">
+                <p style="color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 25px;">
+                    Mohon maaf APP masih maintenance untuk peningkatan sistem. Silakan coba lagi nanti.
+                </p>
+                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.5); font-style: italic;">
+                    -- Tim Astonmology --
+                </div>
+            </div>
+        </div>
+        <!-- Cooldown Overlay (Premium Popup) [NEW] -->
+        <div id="cooldown-overlay" class="modal-overlay hidden"
+            style="z-index: 2147483647; backdrop-filter: blur(25px);">
+            <div class="glass-card premium-cooldown-card"
+                style="text-align: center; max-width: 380px; padding: 40px 30px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(15, 23, 42, 0.6); position: relative; overflow: hidden; margin: auto;">
+                <!-- Animated Background Pulse -->
+                <div class="pulse-bg"
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%); z-index: -1;">
+                </div>
+
+                <div class="cooldown-icon-container"
+                    style="margin-bottom: 25px; position: relative; display: inline-block;">
+                    <div class="main-icon"
+                        style="font-size: 4.5rem; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.4)); animation: float 3s ease-in-out infinite;">
+                        ⏳</div>
+                    <div class="sparkle"
+                        style="position: absolute; top: -10px; right: -10px; font-size: 1.5rem; animation: twinkle 2s infinite;">
+                        ✨</div>
+                </div>
+
+                <h3
+                    style="margin-bottom: 12px; font-family: 'Outfit', sans-serif; font-size: 1.6rem; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                    Sistem Cooldown</h3>
+
+                <p style="color: rgba(255, 255, 255, 0.85); line-height: 1.6; font-size: 0.95rem; margin-bottom: 30px;">
+                    Mohon maaf, pengambilan data IDX sedang dalam masa Peralihan (Cooldown) untuk
+                    menjaga performa.
+                    <br><br>
+                    <span style="opacity: 0.7; font-size: 0.85rem;">Terima kasih telah bersabar bersama
+                        Astonmology.</span>
+                </p>
+
+                <button class="glass-btn primary-btn"
+                    onclick="document.getElementById('cooldown-overlay').classList.add('hidden')"
+                    style="width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; letter-spacing: 0.5px; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000; border: none; box-shadow: 0 10px 20px rgba(217, 119, 6, 0.2);">
+                    Saya Mengerti
+                </button>
+            </div>
+        </div>
+
+        <style>
+            @keyframes float {
+
+                0%,
+                100% {
+                    transform: translateY(0);
+                }
+
+                50% {
+                    transform: translateY(-10px);
+                }
+            }
+
+            @keyframes twinkle {
+
+                0%,
+                100% {
+                    opacity: 0.3;
+                    transform: scale(0.8);
+                }
+
+                50% {
+                    opacity: 1;
+                    transform: scale(1.1);
+                }
+            }
+
+            .premium-cooldown-card {
+                animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+
+            @keyframes slideUpFade {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+        </style>
+
+        <script src="script.js"></script>
+</body>
+
+</html>

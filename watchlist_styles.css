@@ -1,0 +1,333 @@
+/* --- Watchlist & Market Summary Styles --- */
+
+/* Market Summary Header */
+.market-summary-card {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 15px;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    margin-bottom: 20px;
+    animation: fadeInDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s backwards;
+}
+
+.market-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.market-item .label {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.market-item .value {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: white;
+}
+
+.market-item .value.up {
+    color: #10b981;
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.market-item .value.down {
+    color: #ef4444;
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Watchlist Grid */
+.watchlist-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+    min-height: 200px;
+}
+
+/* Empty State */
+.watchlist-empty {
+    text-align: center;
+    padding: 40px 20px;
+    opacity: 0.7;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.watchlist-empty i {
+    font-size: 3rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+/* Watchlist Item Card */
+.watchlist-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 16px;
+    /* FIX: Relative position for absolute menu button + padding right to avoid overlap */
+    position: relative;
+    padding-right: 40px;
+
+    display: grid;
+    /* FIX: Back to 3 columns, Menu is absolute */
+    grid-template-columns: auto 1fr auto;
+
+    /* Symbol | Sparkline | Price */
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.watchlist-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateX(4px);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.wl-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 70px;
+}
+
+.wl-symbol {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Pulse Indicator */
+.wl-pulse {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--text-secondary);
+    display: inline-block;
+}
+
+.wl-pulse.bull {
+    background-color: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    animation: pulse-green 2s infinite;
+}
+
+.wl-pulse.bear {
+    background-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-red {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.wl-name {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+}
+
+/* Center: Sparkline (Mini Chart) */
+.wl-sparkline {
+    height: 30px;
+    width: 100%;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+}
+
+.wl-sparkline svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.spark-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.spark-fill {
+    stroke: none;
+    opacity: 0.2;
+}
+
+.uptrend .spark-line {
+    stroke: #10b981;
+}
+
+.uptrend .spark-fill {
+    fill: #10b981;
+}
+
+.downtrend .spark-line {
+    stroke: #ef4444;
+}
+
+.downtrend .spark-fill {
+    fill: #ef4444;
+}
+
+/* Right: Price & Change */
+.wl-price-box {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.wl-price {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    color: white;
+    transition: color 0.3s;
+}
+
+.wl-change {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 2px;
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.wl-change.up {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.wl-change.down {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Flash Effects */
+@keyframes flash-green {
+    0% {
+        background: rgba(16, 185, 129, 0.3);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+@keyframes flash-red {
+    0% {
+        background: rgba(239, 68, 68, 0.3);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+.flash-up {
+    animation: flash-green 0.5s ease-out;
+}
+
+.flash-down {
+    animation: flash-red 0.5s ease-out;
+}
+
+/* Add Button in Header */
+.icon-only-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-blue);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.icon-only-btn i {
+    font-size: 1rem;
+}
+
+/* Bottom Sheet Modal Style override */
+.bottom-sheet {
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.drag-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 0 auto 15px auto;
+}

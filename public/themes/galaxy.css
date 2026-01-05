@@ -1,0 +1,172 @@
+/* 
+   GALAXY THEME - Neo-Glassmorphism Premium
+   A cosmic, futuristic theme with deep space vibes and glowing accents.
+*/
+
+:root {
+    --bg-dark: #020617; /* Deepest blue/black */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    
+    /* Cosmic Palette */
+    --accent-blue: #0ea5e9;    /* Electric Cyan */
+    --accent-violet: #8b5cf6;  /* Plasma Purple */
+    --accent-magenta: #d946ef; /* Glowing Magenta */
+    --accent-gradient: linear-gradient(135deg, var(--accent-blue), var(--accent-violet), var(--accent-magenta));
+    
+    /* Premium Glassmorphism */
+    --glass-bg: rgba(15, 23, 42, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-blur: blur(24px);
+    
+    --card-radius: 24px;
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+}
+
+/* Base Body Override */
+.theme-galaxy {
+    background-color: var(--bg-dark);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(217, 70, 239, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 60%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+}
+
+/* Animated Ambient Glows */
+.theme-galaxy .ambient-glow {
+    background: transparent;
+    overflow: hidden;
+}
+
+.theme-galaxy .ambient-glow::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: -25%;
+    left: -25%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+    animation: nebula-float 20s infinite alternate ease-in-out;
+}
+
+@keyframes nebula-float {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(10%, 10%) scale(1.1); }
+}
+
+/* Premium Glass Cards */
+.theme-galaxy .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+    border-radius: var(--card-radius);
+    position: relative;
+}
+
+/* Animated Gradient Borders (Recommendation 1) */
+.theme-galaxy .glass-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--card-radius);
+    padding: 1px; /* The border width */
+    background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.3), transparent);
+    -webkit-mask: 
+       linear-gradient(#fff 0 0) content-box, 
+       linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    animation: border-rotate 8s linear infinite;
+}
+
+@keyframes border-rotate {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Adaptive Market Glow (Recommendation 3) */
+.theme-galaxy.market-open .ambient-glow::before {
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 50%);
+}
+.theme-galaxy.market-closed .ambient-glow::before {
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 50%);
+}
+.theme-galaxy.maintenance-active .ambient-glow::before {
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+}
+
+/* Typography & Inputs */
+.theme-galaxy h1, .theme-galaxy .res-label {
+    letter-spacing: 0.02em;
+    text-transform: none;
+}
+
+.theme-galaxy .input-wrapper input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    height: 50px;
+}
+
+.theme-galaxy .input-wrapper input:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Buttons */
+.theme-galaxy .glass-btn {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 18px;
+}
+
+.theme-galaxy .glass-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 25px rgba(14, 165, 233, 0.15);
+}
+
+.theme-galaxy .primary-btn {
+    background: var(--accent-gradient);
+    border: none;
+    box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+}
+
+/* Spinner - Cosmic Vortex */
+.theme-galaxy .spinner {
+    border: 2px solid transparent;
+    border-top: 2px solid var(--accent-blue);
+    border-right: 2px solid var(--accent-violet);
+    width: 45px;
+    height: 45px;
+    filter: drop-shadow(0 0 8px var(--accent-blue));
+}
+
+/* Modals */
+.theme-galaxy .modal-content {
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(32px);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8);
+}
+
+.theme-galaxy .modal-header {
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* Cosmic Skeleton (Recommendation 2) */
+.theme-galaxy .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 2s infinite linear;
+}
+
+@keyframes skeleton-shimmer {
+    to { background-position: -200% 0; }
+}

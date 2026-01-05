@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Chart</title>
+    <script src="https://unpkg.com/lightweight-charts@4.0.0/dist/lightweight-charts.standalone.production.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+    <script src="themes/theme-engine.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            /* Prevent scroll, chart handles it */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Essential for bug fix: Ensure hidden means hidden! */
+        .hidden {
+            display: none !important;
+        }
+
+        header {
+            padding: 10px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            z-index: 10;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .header-left {
+            display: flex;
+            gap: 10px !important;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px;
+            border-radius: 10px;
+            width: 100%;
+            overflow-x: auto;
+            scrollbar-width: none;
+            /* Hide scrollbar Firefox */
+            -ms-overflow-style: none;
+            /* Hide scrollbar IE/Edge */
+        }
+
+        .controls::-webkit-scrollbar {
+            display: none;
+            /* Hide scrollbar Chrome/Safari */
+        }
+
+        .time-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex: 1;
+            text-align: center;
+        }
+
+        .time-btn.active {
+            background: #6366f1;
+            color: white;
+            box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
+        }
+
+        #chart-container {
+            flex: 1;
+            width: 100%;
+            position: relative;
+        }
+
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            /* More transparent for blur */
+            backdrop-filter: blur(8px);
+            display: none;
+            /* Controlled by JS */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            color: white;
+            z-index: 100;
+            transition: opacity 0.3s;
+        }
+
+        .loading-content {
+            background: rgba(30, 41, 59, 0.8);
+            padding: 24px 40px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading span {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 0.95rem;
+        }
+
+        /* Premium Toggle Button */
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Mode: Analysis is ON (Button offers to CLEAR) */
+        .toggle-btn.mode-analysis {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.1);
+            color: #4ade80;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+        }
+
+        .toggle-btn.mode-analysis::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px #22c55e;
+            animation: pulse 2s infinite;
+        }
+
+        /* Mode: Analysis is OFF (Button offers ANALYSIS) */
+        .toggle-btn.mode-clear {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Drawing Toolbar */
+        .drawing-toolbar {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            /* Hidden by default */
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 50;
+        }
+
+        .tool-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tool-btn.active {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+
+        .tool-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Confirmation / Crosshair Controls */
+        #touch-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 15px;
+            z-index: 60;
+        }
+
+        .confirm-btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            cursor: pointer;
+        }
+
+        .header-left {
+            gap: 10px !important;
+            flex: 1;
+            min-width: 0;
+            /* Allow shrinking */
+        }
+
+        .ticker-info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .ticker-switch-container {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 4px 10px;
+            transition: all 0.2s ease;
+            width: fit-content;
+        }
+
+        .ticker-switch-container:focus-within {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .ticker-switch-input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            width: 75px;
+            /* Compact width */
+            outline: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        .company-name {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+            /* Prevent pushing controls */
+            opacity: 0.7;
+        }
+
+        .ticker-switch-input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="fireworks-canvas"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; display:none;"></canvas>
+    <header>
+        <div class="header-row">
+            <div class="header-left">
+                <button class="back-btn" onclick="history.back()">←</button>
+                <div class="ticker-info-group">
+                    <div class="ticker-switch-container">
+                        <input type="text" id="ticker-switch" class="ticker-switch-input" placeholder="TICKER"
+                            maxlength="5" autocomplete="off">
+                    </div>
+                    <div id="company-title" class="company-name">PT Loading...</div>
+                </div>
+            </div>
+        </div>
+        <div class="header-row">
+            <div class="controls">
+                <button class="toggle-btn mode-analysis" id="btn-mode-toggle">Clear</button>
+                <button class="time-btn" data-interval="15m">M15</button>
+                <button class="time-btn" data-interval="1h">H1</button>
+                <button class="time-btn" data-interval="4h">H4</button>
+                <button class="time-btn active" data-interval="1d">D1</button>
+            </div>
+        </div>
+    </header>
+
+    <div id="chart-container">
+        <div class="loading" id="loading-spinner">
+            <div class="loading-content">
+                <!-- Christmas Tree -->
+                <div id="christmas-tree" class="christmas-tree hidden">
+                    <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="42" y="75" width="16" height="20" fill="#854d0e" />
+                        <path d="M10 75 L50 35 L90 75 H10 Z" fill="#15803d" />
+                        <path d="M20 55 L50 20 L80 55 H20 Z" fill="#166534" />
+                        <path d="M30 35 L50 10 L70 35 H30 Z" fill="#14532d" />
+                        <path d="M50 2 L53 12 L63 12 L55 18 L58 28 L50 22 L42 28 L45 18 L37 12 H47 Z" fill="#fbbf24" />
+                        <circle cx="30" cy="70" r="3" fill="#ef4444" />
+                        <circle cx="70" cy="70" r="3" fill="#facc15" />
+                        <circle cx="40" cy="50" r="3" fill="#ef4444" />
+                        <circle cx="60" cy="50" r="3" fill="#fff" />
+                    </svg>
+                </div>
+                <!-- Christmas Text -->
+                <div id="christmas-text" class="christmas-text hidden">Selamat Natal</div>
+                <!-- New Year Text -->
+                <div id="newyear-text" class="newyear-text hidden">Selamat Tahun Baru 2026</div>
+
+                <div class="spinner"></div>
+                <span>Analyzing Market...</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Cooldown Overlay (Premium Popup) [NEW] -->
+    <div id="cooldown-overlay" class="modal-overlay hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483647; backdrop-filter: blur(25px); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);">
+        <div class="glass-card premium-cooldown-card"
+            style="text-align: center; max-width: 380px; padding: 40px 30px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(15, 23, 42, 0.8); position: relative; overflow: hidden; border-radius: 20px;">
+            <!-- Animated Background Pulse -->
+            <div class="pulse-bg"
+                style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%); z-index: -1;">
+            </div>
+
+            <div class="cooldown-icon-container"
+                style="margin-bottom: 25px; position: relative; display: inline-block;">
+                <div class="main-icon"
+                    style="font-size: 4.5rem; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.4)); animation: float 3s ease-in-out infinite;">
+                    ⏳</div>
+                <div class="sparkle"
+                    style="position: absolute; top: -10px; right: -10px; font-size: 1.5rem; animation: twinkle 2s infinite;">
+                    ✨</div>
+            </div>
+
+            <h3
+                style="margin-bottom: 12px; font-family: 'Outfit', sans-serif; font-size: 1.6rem; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                Sistem Cooldown</h3>
+
+            <p style="color: rgba(255, 255, 255, 0.85); line-height: 1.6; font-size: 0.95rem; margin-bottom: 30px;">
+                Mohon maaf, pengambilan data IDX sedang dalam masa Peralihan (Cooldown) untuk menjaga
+                performa.
+                <br><br>
+                <span style="opacity: 0.7; font-size: 0.85rem;">Terima kasih telah bersabar bersama Astonmology.</span>
+            </p>
+
+            <button class="back-btn" onclick="document.getElementById('cooldown-overlay').classList.add('hidden')"
+                style="width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; letter-spacing: 0.5px; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000; border: none; box-shadow: 0 10px 20px rgba(217, 119, 6, 0.2); cursor: pointer;">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+
+    <style>
+        .modal-overlay.hidden {
+            display: none !important;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        .premium-cooldown-card {
+            animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+
+    <script src="chart.js"></script>
+</body>
+
+</html>

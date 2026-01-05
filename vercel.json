@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "functions": {
+    "api/cron/screener.js": {
+      "maxDuration": 60
+    },
+    "api/cron/scanner.js": {
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "src": "/webhook",
+      "dest": "api/webhook.js",
+      "methods": [
+        "POST",
+        "GET"
+      ]
+    },
+    {
+      "src": "/api/webhook",
+      "dest": "api/webhook.js",
+      "methods": [
+        "POST",
+        "GET"
+      ]
+    },
+    {
+      "src": "/api/web",
+      "dest": "api/web.js",
+      "methods": [
+        "POST",
+        "OPTIONS"
+      ]
+    },
+    {
+      "src": "/api/cron/screener",
+      "dest": "api/cron/screener.js",
+      "methods": [
+        "POST",
+        "GET"
+      ]
+    },
+    {
+      "src": "/api/cron/scanner",
+      "dest": "api/cron/scanner.js",
+      "methods": [
+        "POST",
+        "GET"
+      ]
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ]
+}

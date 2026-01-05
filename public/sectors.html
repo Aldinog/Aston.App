@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sectoral Rotation - Astonmology</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="themes/theme-engine.js"></script>
+    <style>
+        .heatmap-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .sector-card {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+        }
+
+        .sector-card:hover {
+            transform: scale(1.02);
+            filter: brightness(1.2);
+            z-index: 2;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .sector-name {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
+
+        .sector-change {
+            font-size: 1.1rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .sector-price {
+            font-size: 0.6rem;
+            opacity: 0.6;
+            margin-top: 4px;
+        }
+
+        /* Intensity Classes */
+        .heat-bull-3 {
+            background: linear-gradient(135deg, #064e3b, #059669);
+            color: #fff;
+            border-color: #10b981;
+        }
+
+        .heat-bull-2 {
+            background: linear-gradient(135deg, #065f46, #10b981);
+            color: #fff;
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        .heat-bull-1 {
+            background: linear-gradient(135deg, #065f46, #34d399);
+            color: #fff;
+            border-color: rgba(52, 211, 153, 0.3);
+        }
+
+        .heat-bear-3 {
+            background: linear-gradient(135deg, #7f1d1d, #ef4444);
+            color: #fff;
+            border-color: #f87171;
+        }
+
+        .heat-bear-2 {
+            background: linear-gradient(135deg, #991b1b, #f87171);
+            color: #fff;
+            border-color: rgba(248, 113, 113, 0.5);
+        }
+
+        .heat-bear-1 {
+            background: linear-gradient(135deg, #991b1b, #fb7185);
+            color: #fff;
+            border-color: rgba(251, 113, 133, 0.3);
+        }
+
+        .heat-neutral {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .last-update {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            text-align: center;
+            margin-top: 30px;
+            font-style: italic;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            width: fit-content;
+            font-size: 0.85rem;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-5px);
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-color, #0f172a);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .skeleton-card {
+            aspect-ratio: 1 / 1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            animation: pulse-op 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse-op {
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* Sector Emitents Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        /* Premium Scrollbar */
+        .modal-content::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: rgba(251, 191, 36, 0.2);
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(251, 191, 36, 0.4);
+        }
+
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin: -12px auto 20px auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            background: inherit;
+            z-index: 2;
+            padding-bottom: 10px;
+        }
+
+        .modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fbbf24;
+        }
+
+        .close-modal {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .emitent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .emitent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .emitent-item:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(251, 191, 36, 0.2);
+            transform: scale(1.01);
+        }
+
+        .emitent-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .emitent-symbol {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .emitent-name {
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+
+        .emitent-price-box {
+            text-align: right;
+        }
+
+        .emitent-price {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .emitent-change {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .change-up {
+            color: #10b981;
+        }
+
+        .change-down {
+            color: #ef4444;
+        }
+
+        .change-neutral {
+            color: #94a3b8;
+        }
+
+        .modal-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body class="premium-theme">
+    <div class="ambient-glow"></div>
+
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; font-size: 0.8rem; opacity: 0.6;">Menghubungkan ke Bursa...</p>
+    </div>
+
+    <div class="container fade-in">
+        <header class="app-header" style="justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <a href="index.html" class="back-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back
+            </a>
+            <div style="text-align: right;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: #fbbf24;">Sectors Heatmap</h3>
+                <p style="margin: 0; font-size: 0.7rem; opacity: 0.5;">IDX Sectoral Rotation</p>
+            </div>
+        </header>
+
+        <main id="heatmap-main">
+            <div class="heatmap-container" id="heatmap-grid">
+                <!-- Data will be injected here -->
+            </div>
+        </main>
+
+        <p class="last-update" id="update-info">Sedang memuat data...</p>
+
+        <div class="glass-card"
+            style="margin-top: 25px; padding: 15px; font-size: 0.75rem; line-height: 1.5; opacity: 0.8; border-color: rgba(251, 191, 36, 0.15);">
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="font-size: 1.2rem;">💡</span>
+                <div>
+                    <strong>PRO Insight:</strong> Heatmap ini membantu Anda mengidentifikasi kemana aliran uang
+                    institusi hari ini. Sektor yang hijau paling pekat menandakan akumulasi sektoral yang kuat. Data
+                    bersumber dari Yahoo Finance (Delayed 15m).
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Sector Emitents Modal -->
+    <div id="sector-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-sector-name">Sector Name</h3>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div id="modal-body">
+                <div class="modal-loading" id="modal-loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px; font-size: 0.8rem;">Memuat daftar emiten...</p>
+                </div>
+                <div class="emitent-list" id="emitent-list">
+                    <!-- Emitents will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Cooldown Overlay (Premium Popup) [NEW] -->
+    <div id="cooldown-overlay" class="cooldown-popup-overlay hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483647; backdrop-filter: blur(25px); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);">
+        <div class="glass-card premium-cooldown-card"
+            style="text-align: center; max-width: 380px; padding: 40px 30px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(15, 23, 42, 0.8); position: relative; overflow: hidden; border-radius: 20px; margin: auto;">
+            <!-- Animated Background Pulse -->
+            <div class="pulse-bg"
+                style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%); z-index: -1;">
+            </div>
+
+            <div class="cooldown-icon-container"
+                style="margin-bottom: 25px; position: relative; display: inline-block;">
+                <div class="main-icon"
+                    style="font-size: 4.5rem; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.4)); animation: float 3s ease-in-out infinite;">
+                    ⏳</div>
+                <div class="sparkle"
+                    style="position: absolute; top: -10px; right: -10px; font-size: 1.5rem; animation: twinkle 2s infinite;">
+                    ✨</div>
+            </div>
+
+            <h3
+                style="margin-bottom: 12px; font-family: 'Outfit', sans-serif; font-size: 1.6rem; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                Sistem Cooldown</h3>
+
+            <p style="color: rgba(255, 255, 255, 0.85); line-height: 1.6; font-size: 0.95rem; margin-bottom: 30px;">
+                Mohon maaf, pengambilan data IDX sedang dalam masa Peralihan (Cooldown) untuk menjaga
+                performa.
+                <br><br>
+                <span style="opacity: 0.7; font-size: 0.85rem;">Terima kasih telah bersabar bersama Astonmology.</span>
+            </p>
+
+            <button class="back-btn" onclick="document.getElementById('cooldown-overlay').classList.add('hidden')"
+                style="width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; letter-spacing: 0.5px; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000; border: none; box-shadow: 0 10px 20px rgba(217, 119, 6, 0.2); cursor: pointer; justify-content: center;">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+
+    <style>
+        .cooldown-popup-overlay.hidden {
+            display: none !important;
+        }
+
+        .modal-overlay.hidden {
+            display: none !important;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        .premium-cooldown-card {
+            animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+    <script src="sectors.js"></script>
+</body>
+
+</html>
