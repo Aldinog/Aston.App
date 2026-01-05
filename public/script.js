@@ -1022,8 +1022,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             </div>
                         ` : ''}
                         
-                        <div style="display:flex; gap:10px; margin-top:30px;">
-                            <button class="glass-btn btn-retry-review" style="flex:1; padding: 14px; border: 1px solid rgba(255,255,255,0.2);">
+                        <div style="display:flex; gap:10px; margin-top:20px;">
+                            <button class="glass-btn btn-retry-review" style="flex:1; padding: 14px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255, 255, 255, 0.05); color: #e2e8f0;">
                                 <i class="fas fa-undo"></i> Retry
                             </button>
                             <button class="glass-btn btn-detail-review" style="flex:1.5; padding: 14px; background: #3b82f6; border: none; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);">
