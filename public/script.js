@@ -1199,6 +1199,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (tickerInput) tickerInput.addEventListener('input', () => { tickerInput.style.borderColor = 'rgba(255, 255, 255, 0.1)'; });
 
+    // --- QUICK SEARCH LOGIC ---
+    const qsInput = document.getElementById('qs-input');
+    const qsBtn = document.getElementById('qs-btn');
+
+    if (qsInput && qsBtn) {
+        const handleQuickSearch = () => {
+            let val = qsInput.value.trim().toUpperCase();
+            if (!val) return;
+
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+            // Auto-add .JK if 4 chars and no dot
+            if (val.length === 4 && !val.includes('.')) {
+                val += '.JK';
+            }
+
+            // Ensure currentCtxSymbol is set for Feature Menu
+            currentCtxSymbol = val;
+
+            qsInput.value = ''; // Clear input
+            qsInput.blur(); // Dismiss keyboard
+
+            // Open Context Menu directly
+            openContextMenu(val);
+        };
+
+        qsBtn.addEventListener('click', handleQuickSearch);
+
+        qsInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleQuickSearch();
+            }
+        });
+    }
+
     // Initial Login & Load
     await login();
     await loadWatchlist();
