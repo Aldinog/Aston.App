@@ -49,16 +49,61 @@ async function getPersistentCandles(symbol, interval = '1d', limit = 300) {
     // IDX Market Hours: ~08:00 - 16:00 WIB (Starting earlier for pre-opening/stale data sync)
     const isMarketOpen = !isWeekend && (hour >= 8 && hour < 16);
 
-    // If it's weekend or outside market hours AND we have some data in DB,
-    // we prioritize DB and SKIP fetching from Yahoo Finance to save IP reputation.
-    if ((isWeekend || !isMarketOpen) && candles.length > 0) {
-        console.log(`[PERSISTENCE] Market closed (${isWeekend ? 'Weekend' : 'After Hours'}). Using DB data only.`);
+    // --- STALE DATA CHECK (Updated) ---
+    // If it's weekend or outside market hours, we normally trust DB to save API calls.
+    // BUT we must ensure the data in DB is actually "fresh" (covers the last trading session).
+
+    let isDataUpToDate = false;
+    if (candles.length > 0) {
+        const lastCandle = candles[candles.length - 1];
+        // Time stored in DB is typically Unix Timestamp (seconds). Convert to Jakarta Time.
+        const lastDate = moment.unix(lastCandle.time).tz('Asia/Jakarta');
+
+        // Determine "Expected Last Trading Day" based on NOW
+        let expectedMarketDate = now.clone();
+
+        // 1. Adjust for Weekend/Early Morning
+        if (now.day() === 0) { // Sunday -> Expect Friday
+            expectedMarketDate.subtract(2, 'days');
+        } else if (now.day() === 6) { // Saturday -> Expect Friday
+            expectedMarketDate.subtract(1, 'days');
+        } else if (now.day() === 1 && now.hour() < 9) { // Monday morning before open -> Expect Friday
+            expectedMarketDate.subtract(3, 'days');
+        } else if (now.hour() < 9) { // Tue-Fri morning before open -> Expect Yesterday
+            expectedMarketDate.subtract(1, 'days');
+        }
+
+        // 2. Validate Date Match
+        const isSameDate = lastDate.isSame(expectedMarketDate, 'day');
+
+        if (interval === '1d' || interval === '1wk' || interval === '1mo') {
+            // For Daily+: Date match is sufficient
+            if (isSameDate) isDataUpToDate = true;
+        } else {
+            // For Intraday: Check if we have Session 2 data (Last candle hour >= 13:00)
+            // IDX Session 2 starts ~13:30. Candles usually timestamps 13:xx, 14:xx, 15:xx.
+            if (isSameDate) {
+                const lastHour = lastDate.hour();
+                // Valid if we have at least entered Session 2 ( > 12:00 )
+                if (lastHour >= 13) isDataUpToDate = true;
+            }
+        }
+    }
+
+    // Only Start Blocking Fetch if:
+    // 1. Market is Closed OR Weekend
+    // 2. We actually have data
+    // 3. That data is CONFIRMED Fresh (UpToDate)
+    if ((isWeekend || !isMarketOpen) && candles.length > 0 && isDataUpToDate) {
+        console.log(`[PERSISTENCE] Market closed & Data fresh (${interval}). Using DB data.`);
         return candles.map(c => ({
             ...c,
             time: (interval === '1d' || interval === '1wk' || interval === '1mo')
                 ? new Date(c.time * 1000).toISOString().split('T')[0]
                 : c.time
         }));
+    } else if ((isWeekend || !isMarketOpen) && candles.length > 0 && !isDataUpToDate) {
+        console.log(`[PERSISTENCE] Stale data detected for ${query} (${interval}). Force updating from YF...`);
     }
 
     // 2. Fetch from YF to get the latest (missing) data
