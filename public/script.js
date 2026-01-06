@@ -158,7 +158,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (terminalOutput) {
             terminalOutput.innerHTML = `
                 <div class="loading-pulse">
-                    <div class="spinner"></div>
+                    <div class="loader-chart">
+                        <div class="loader-bar"></div>
+                        <div class="loader-bar"></div>
+                        <div class="loader-bar"></div>
+                        <div class="loader-bar"></div>
+                    </div>
                     <span>${text}...</span>
                 </div>
             `;
@@ -1016,7 +1021,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             resultContainer.innerHTML = `
                 <div class="loading-pulse" style="padding: 40px 20px;">
-                    <div class="spinner" style="width: 50px; height: 50px; border-width: 4px;"></div>
+                <div class="loader-chart">
+                    <div class="loader-bar"></div>
+                    <div class="loader-bar"></div>
+                    <div class="loader-bar"></div>
+                    <div class="loader-bar"></div>
+                </div>
                     <div style="margin-top: 20px; font-size: 1.1em; color: #94a3b8;">Analyzing ${symbol}...</div>
                     <div style="font-size: 0.8em; color: #64748b; margin-top: 5px;">AI is calculating score & risk</div>
                 </div>

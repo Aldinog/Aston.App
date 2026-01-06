@@ -146,18 +146,61 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #6366f1;
-            border-radius: 50%;
-            animation: spin 1s infinite linear;
+        /* Market Pulse Loader */
+        .loader-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 35px;
+            padding: 5px;
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
+        .loader-bar {
+            width: 6px;
+            background: linear-gradient(to top, #6366f1, #818cf8);
+            border-radius: 2px;
+            animation: bar-grow 1s ease-in-out infinite;
+            transform-origin: bottom;
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+        }
+
+        .loader-bar:nth-child(1) {
+            height: 40%;
+            animation-delay: 0.0s;
+            background: linear-gradient(to top, #ef4444, #fca5a5);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+        }
+
+        .loader-bar:nth-child(2) {
+            height: 70%;
+            animation-delay: 0.15s;
+        }
+
+        .loader-bar:nth-child(3) {
+            height: 50%;
+            animation-delay: 0.3s;
+            background: linear-gradient(to top, #ef4444, #fca5a5);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+        }
+
+        .loader-bar:nth-child(4) {
+            height: 90%;
+            animation-delay: 0.45s;
+            background: linear-gradient(to top, #22c55e, #86efac);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+        }
+
+        @keyframes bar-grow {
+
+            0%,
+            100% {
+                transform: scaleY(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scaleY(0.4);
+                opacity: 0.5;
             }
         }
 
@@ -424,7 +467,12 @@
                 <!-- New Year Text -->
                 <div id="newyear-text" class="newyear-text hidden">Selamat Tahun Baru 2026</div>
 
-                <div class="spinner"></div>
+                <div class="loader-chart">
+                    <div class="loader-bar"></div>
+                    <div class="loader-bar"></div>
+                    <div class="loader-bar"></div>
+                    <div class="loader-bar"></div>
+                </div>
                 <span>Analyzing Market...</span>
             </div>
         </div>

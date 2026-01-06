@@ -567,20 +567,32 @@ input[type=number] {
     padding: 20px;
 }
 
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(99, 102, 241, 0.3);
-    border-radius: 50%;
-    border-top-color: var(--accent-blue);
-    animation: spin 1s ease-in-out infinite;
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+/* Market Pulse Loader */
+.loader-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 35px;
+    padding: 5px;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+.loader-bar {
+    width: 6px;
+    background: linear-gradient(to top, var(--accent-blue), #818cf8);
+    border-radius: 2px;
+    animation: bar-grow 1s ease-in-out infinite;
+    transform-origin: bottom;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+}
+
+.loader-bar:nth-child(1) { height: 40%; animation-delay: 0.0s; background: linear-gradient(to top, #ef4444, #fca5a5); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); } 
+.loader-bar:nth-child(2) { height: 70%; animation-delay: 0.15s; }
+.loader-bar:nth-child(3) { height: 50%; animation-delay: 0.3s; background: linear-gradient(to top, #ef4444, #fca5a5); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+.loader-bar:nth-child(4) { height: 90%; animation-delay: 0.45s; background: linear-gradient(to top, #22c55e, #86efac); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
+
+@keyframes bar-grow {
+    0%, 100% { transform: scaleY(1); opacity: 0.8; }
+    50% { transform: scaleY(0.4); opacity: 0.5; }
 }
 
 .loading-pulse span {
