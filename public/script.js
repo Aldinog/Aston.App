@@ -243,8 +243,60 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // --- OPTIMISTIC LOGIN (Local Cache) ---
+        let isOptimisticLogin = false;
         try {
-            if (authStatus) authStatus.innerText = 'Loading bentar...';
+            const cachedUser = localStorage.getItem('cached_user_data');
+            if (cachedUser) {
+                const user = JSON.parse(cachedUser);
+                console.log('[CACHE] Restoring User Data:', user.telegram_id);
+
+                // Immediate UI Updates
+                if (authOverlay) authOverlay.classList.add('hidden');
+
+                // Restore logic state
+                userMembershipStatus = user.membership_status || 'standard';
+                isPaywallMode = user.paywall_mode || false;
+                featurePermissions = user.feature_permissions || {};
+
+                // UI Elements state restoration
+                const adminBtn = document.getElementById('admin-toggle-btn');
+                const statusBadge = document.getElementById('app-status-badge');
+                const statusText = document.getElementById('status-text');
+
+                if (statusBadge && statusText) {
+                    if (user.is_maintenance) {
+                        statusBadge.classList.add('maintenance-active');
+                        statusText.innerText = 'Maintenance';
+                    } else {
+                        statusBadge.classList.remove('maintenance-active');
+                        statusText.innerText = 'Online';
+                    }
+                }
+
+                if (user.is_admin === true && adminBtn) {
+                    adminBtn.classList.remove('hidden');
+                    adminBtn.onclick = () => {
+                        window.location.href = 'admin.html';
+                    };
+                }
+
+                // Apply Theme (Silent)
+                if (user.active_theme && window.themeEngine) {
+                    window.themeEngine.applyTheme(user.active_theme);
+                }
+
+                renderDynamicBadges();
+                isOptimisticLogin = true;
+            }
+        } catch (e) {
+            console.warn('[CACHE] Failed to load cached user', e);
+        }
+
+        try {
+            // Only show visible loading if NOT optimistic
+            if (!isOptimisticLogin && authStatus) authStatus.innerText = 'Loading bentar...';
+
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -263,6 +315,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (response.ok && data.success) {
                 sessionToken = data.token;
                 localStorage.setItem('aston_session_token', sessionToken);
+
+                // --- UPDATE CACHE ---
+                localStorage.setItem('cached_user_data', JSON.stringify(data.user));
+
+                // Force hide overlay if it wasn't hidden by optimistic login
                 if (authOverlay) authOverlay.classList.add('hidden');
 
                 const user = data.user;
@@ -302,12 +359,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 featurePermissions = user.feature_permissions || {};
                 renderDynamicBadges();
 
-                if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+                if (!isOptimisticLogin && tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             } else {
                 if (data.code === 'MAINTENANCE_MODE') {
                     location.reload();
                     return;
                 }
+
+                // IF Auth fails, clear cache so user doesn't get stuck in optimistic state with invalid token
+                localStorage.removeItem('cached_user_data');
+
                 if (authStatus) {
                     if (data.code === 'NOT_MEMBER') {
                         authStatus.innerHTML = `
@@ -326,7 +387,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (err) {
             console.error('Login error:', err);
-            if (authStatus) {
+            // If optimistic login worked, we can silence usage errors or show a small toast, but avoiding full block is key.
+            // For now, if NOT optimistic, show error.
+            if (!isOptimisticLogin && authStatus) {
                 authStatus.innerHTML = `
                     <div style="color: #ef4444; margin-bottom: 10px; font-size:0.85em;">Error: ${err.message}</div>
                     <button class="glass-btn" onclick="location.reload()" style="padding: 10px 20px; font-size: 0.8rem;">Retry</button>
@@ -340,17 +403,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     let pollingInterval = null;
 
     const fetchMarketSummary = async () => {
-        // Simple implementation: fetch IHSG and USD via existing web API or new logic
-        // For now, we reuse the existing /api/web or just fetch them as symbols if possible.
-        // Let's assume we can use the same quote fetching mechanism or just hardcode for V1 Demo.
-        // Better: Fetch ^JKSE and USDIDR=X alongside watchlist or separate.
+        // --- CACHE FIRST ---
+        const cachedMarket = localStorage.getItem('cached_market_data');
+        const updateUI = (id, symbol, price, change) => {
+            const el = document.getElementById(id);
+            if (el) {
+                const isUp = change >= 0;
+                const color = isUp ? '#22c55e' : '#ef4444';
+                const sign = isUp ? '+' : '';
+                el.innerHTML = `
+                    ${price.toLocaleString()} 
+                    <span style="color:${color}; font-size:0.8em; margin-left:4px;">
+                        (${sign}${change.toFixed(2)}%)
+                    </span>
+                `;
+            }
+        };
+
+        if (cachedMarket) {
+            try {
+                const data = JSON.parse(cachedMarket);
+                const ihsg = data.find(x => x.symbol === '^JKSE');
+                const usd = data.find(x => x.symbol === 'USDIDR=X');
+                if (ihsg) updateUI('market-ihsg', '^JKSE', ihsg.regularMarketPrice, ihsg.regularMarketChangePercent || 0);
+                if (usd) updateUI('market-usd', 'USDIDR=X', usd.regularMarketPrice, usd.regularMarketChangePercent || 0);
+            } catch (e) { console.error(e) }
+        }
+
+        // --- NETWORK FETCH ---
         try {
-            // We use a specialized action or just 'quote' if available. 
-            // Since we don't have a direct 'quote' action in api/web exposed in the snippet, 
-            // let's rely on api/watchlist returning them if we add them to a "system" watchlist or similar.
-            // OR: Implement a specific quick fetch.
-            // Let's try to add them to the first fetch of watchlist? No, generic is better.
-            if (!sessionToken) return; // [FIX] Don't fetch if not logged in
+            if (!sessionToken) return;
 
             const response = await fetch('/api/web', {
                 method: 'POST',
@@ -361,29 +443,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (response.ok) {
                 const res = await response.json();
                 if (res.success && Array.isArray(res.data)) {
-                    // Helper to format
-                    const updateUI = (id, symbol) => {
-                        const item = res.data.find(x => x.symbol === symbol);
-                        const el = document.getElementById(id);
-                        if (item && el) {
-                            const price = item.regularMarketPrice;
-                            const change = item.regularMarketChangePercent || 0;
-                            const isUp = change >= 0;
-                            const color = isUp ? '#22c55e' : '#ef4444';
-                            const sign = isUp ? '+' : '';
+                    // Update Cache
+                    localStorage.setItem('cached_market_data', JSON.stringify(res.data));
 
-                            // Format: Price <span style="...">(+0.5%)</span>
-                            el.innerHTML = `
-                                ${price.toLocaleString()} 
-                                <span style="color:${color}; font-size:0.8em; margin-left:4px;">
-                                    (${sign}${change.toFixed(2)}%)
-                                </span>
-                            `;
-                        }
-                    };
-
-                    updateUI('market-ihsg', '^JKSE');
-                    updateUI('market-usd', 'USDIDR=X');
+                    const ihsg = res.data.find(x => x.symbol === '^JKSE');
+                    const usd = res.data.find(x => x.symbol === 'USDIDR=X');
+                    if (ihsg) updateUI('market-ihsg', '^JKSE', ihsg.regularMarketPrice, ihsg.regularMarketChangePercent || 0);
+                    if (usd) updateUI('market-usd', 'USDIDR=X', usd.regularMarketPrice, usd.regularMarketChangePercent || 0);
                 }
             }
         } catch (e) {
@@ -396,20 +462,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             const container = document.getElementById('watchlist-container');
             if (!container) return; // safety
 
-            // Only show loading on initial load, not polling
+            // --- OPTIMISTIC WATCHLIST LOAD ---
+            let hasCache = false;
+            // Only use cache if we have no live data yet
             if (watchlistData.length === 0) {
-                // container.innerHTML = ... (already has loading pulse)
+                const cachedWL = localStorage.getItem('cached_watchlist');
+                if (cachedWL) {
+                    try {
+                        const parsed = JSON.parse(cachedWL);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            console.log('[CACHE] Rendering Watchlist from Cache');
+                            renderWatchlist(parsed);
+                            hasCache = true;
+                        }
+                    } catch (e) {
+                        console.warn('WL Cache Parse Error', e);
+                    }
+                }
             }
+
+            // Only show loading spinner if NO data and NO cache
+            // Note: If container has existing content (cache), we don't clear it.
+            // If it's empty and no cache, existing HTML pulse remains.
 
             const response = await fetch('/api/watchlist', {
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${sessionToken}` }
             });
 
+            if (response.status === 401) {
+                // Token Expired / Invalid
+                localStorage.removeItem('cached_user_data');
+                location.reload(); // Force re-auth
+                return;
+            }
+
             if (response.ok) {
                 const res = await response.json();
                 if (res.success) {
                     isPaywallMode = res.paywall_mode;
+
+                    // Update Cache
+                    localStorage.setItem('cached_watchlist', JSON.stringify(res.data));
+
                     renderWatchlist(res.data);
                 }
             }
