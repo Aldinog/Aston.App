@@ -127,7 +127,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             if (limitAIMode) {
                 let allowed = await checkDailyUsage(user, 'ai', limitAICount);
                 if (!allowed) {
-                    return res.status(403).json({ error: `${usage.ai_count} Limit Harian AI Tercapai, coba lagi besok...` });
+                    return res.status(403).json({ error: `10/10 Limit Harian AI Tercapai, coba lagi besok...` });
                 }
             }
 
@@ -212,7 +212,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             if (limitAIMode) {
                 const allowed = await checkDailyUsage(user, 'ai', 5);
                 if (!allowed) {
-                    return res.status(403).json({ error: `${usage.ai_count} Limit Harian AI Tercapai, coba lagi besok...` });
+                    return res.status(403).json({ error: `10/10 Limit Harian AI Tercapai, coba lagi besok...` });
                 }
             }
 
@@ -225,7 +225,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             if (limitAIMode) {
                 const allowed = await checkDailyUsage(user, 'ai', 5);
                 if (!allowed) {
-                    return res.status(403).json({ error: `${usage.ai_count} Limit Harian AI Tercapai, coba lagi besok...` });
+                    return res.status(403).json({ error: `10/10 Limit Harian AI Tercapai, coba lagi besok...` });
                 }
             }
 
