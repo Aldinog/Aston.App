@@ -166,7 +166,7 @@ module.exports = async (req, res) => {
             const modeSetting = appSettings.find(s => s.key === 'maintenance_mode');
             const endSetting = appSettings.find(s => s.key === 'maintenance_end_time');
             const themeSetting = appSettings.find(s => s.key === 'active_theme');
-            const paywallSetting = appSettings.find(s => s.key === 'paywall_active');
+            const paywallSetting = appSettings.find(s => s.key === 'paywall_mode');
             const permsSetting = appSettings.find(s => s.key === 'feature_permissions');
 
             if (modeSetting) maintenanceMode = modeSetting.value;
