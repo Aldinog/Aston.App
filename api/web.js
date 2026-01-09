@@ -99,7 +99,7 @@ module.exports = async (req, res) => {
         const { data: appData } = await supabase
             .from('app_settings')
             .select('key, value')
-            .in('key', ['maintenance_mode', 'maintenance_end_time', 'active_theme', 'paywall_mode', 'feature_permissions', 'maintenance_whitelist', 'live_mode_whitelist', 'cooldown_mode']);
+            .in('key', ['maintenance_mode', 'maintenance_end_time', 'active_theme', 'paywall_mode', 'feature_permissions', 'maintenance_whitelist', 'live_mode_whitelist', 'cooldown_mode', 'limit_chart_mode', 'limit_ai_mode', 'limit_ai_count']);
 
         const settingsMap = {};
         if (appData) {
@@ -143,21 +143,17 @@ module.exports = async (req, res) => {
 
         // --- Auto-Downgrade & Expiry Check ---
         const now = new Date();
-        const expiry = new Date(user.expires_at);
-
-        if (expiry < now) {
-            // If they were PRO, they "expire" back to Standard
-            if (user.membership_status === 'pro') {
-                console.log(`[WEB API] User ${user.telegram_user_id} PRO expired. Downgrading to standard.`);
-
-                // Set new expiry for standard access (3 days from now)
-                const newStandardExpiry = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+        // Only check expiry if user is PRO and has an expiry date
+        if (user.membership_status === 'pro' && user.expires_at) {
+            const expiry = new Date(user.expires_at);
+            if (expiry < now) {
+                console.log(`[WEB API] User ${user.telegram_user_id} PRO expired. Downgrading to standard (Lifetime).`);
 
                 const { data: downgradedUser, error: downgradeError } = await supabase
                     .from('users')
                     .update({
                         membership_status: 'standard',
-                        expires_at: newStandardExpiry.toISOString()
+                        expires_at: null // Infinite
                     })
                     .eq('id', user.id)
                     .select()
@@ -167,10 +163,8 @@ module.exports = async (req, res) => {
                     console.error('[WEB API] Downgrade Error:', downgradeError);
                 } else {
                     user.membership_status = 'standard';
-                    user.expires_at = newStandardExpiry.toISOString();
+                    user.expires_at = null;
                 }
-            } else {
-                return res.status(403).json({ error: 'Access expired. Please re-register.' });
             }
         }
 
@@ -255,8 +249,20 @@ module.exports = async (req, res) => {
             if (adminResponse) return adminResponse;
         }
 
+        // --- Fetch Limit Settings ---
+        let limitChartMode = true; // Default ON
+        let limitAIMode = true; // Default ON
+
+        if (settingsMap['limit_chart_mode'] !== undefined) limitChartMode = settingsMap['limit_chart_mode'];
+        if (settingsMap['limit_ai_mode'] !== undefined) limitAIMode = settingsMap['limit_ai_mode'];
+
+        // --- Fetch User Usage Stats ---
+        // We need to re-fetch user to get 'daily_usage' JSONB column if it exists/changed
+        // Or we can rely on what session gave us? Session usually joins users. 
+        // Let's assume session.users has it. If not, we might fail a bit, but we can patch 'daily_usage' locally.
+
         // 2. Try Market Controller
-        const marketResponse = await handleMarketAction(req, res, action, user, activeTheme, liveModeWhitelist);
+        const marketResponse = await handleMarketAction(req, res, action, user, activeTheme, liveModeWhitelist, { limitChartMode, limitAIMode });
         if (marketResponse) return marketResponse;
 
         // 3. Fallback

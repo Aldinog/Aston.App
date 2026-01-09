@@ -8,7 +8,7 @@ async function handleAdminAction(req, res, action, user) {
         // Fetch current state first
         const { data } = await supabase.from('app_settings').select('value').eq('key', 'maintenance_mode').single();
         const isMaintenance = data ? data.value : false;
-        
+
         const newState = !isMaintenance;
 
         // Prepare updates
@@ -233,6 +233,38 @@ async function handleAdminAction(req, res, action, user) {
             { key: 'cooldown_end_time', value: endTime }
         ]);
         return res.status(200).json({ success: true, cooldown_end_time: endTime });
+    }
+
+    if (action === 'admin/settings/get-limit-config') {
+        const keys = ['limit_chart_mode', 'limit_ai_mode', 'limit_ai_count'];
+        const { data } = await supabase.from('app_settings').select('key, value').in('key', keys);
+
+        const config = {
+            limit_chart_mode: true,
+            limit_ai_mode: true,
+            limit_ai_count: 5 // Default
+        };
+
+        if (data) {
+            data.forEach(item => {
+                config[item.key] = item.value;
+            });
+        }
+        return res.status(200).json({ success: true, config });
+    }
+
+    if (action === 'admin/settings/update-limit-config') {
+        const { limit_chart_mode, limit_ai_mode, limit_ai_count } = req.body;
+
+        const updates = [];
+        if (limit_chart_mode !== undefined) updates.push({ key: 'limit_chart_mode', value: limit_chart_mode });
+        if (limit_ai_mode !== undefined) updates.push({ key: 'limit_ai_mode', value: limit_ai_mode });
+        if (limit_ai_count !== undefined) updates.push({ key: 'limit_ai_count', value: limit_ai_count });
+
+        if (updates.length > 0) {
+            await supabase.from('app_settings').upsert(updates);
+        }
+        return res.status(200).json({ success: true });
     }
 
     if (action === 'admin/diagnostics/ip-status') {

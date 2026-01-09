@@ -93,37 +93,41 @@ module.exports = async (req, res) => {
 
         if (userError && userError.code === 'PGRST116') {
             // User not found, create new
-            // Requirement: generate password random, simpan password_hash
             const crypto = require('crypto');
             const randomPassword = crypto.randomBytes(16).toString('hex');
 
+            // NEW LOGIC: Standard user = Lifetime Access (null expiry)
+            // Membership status default 'member' (standard)
+            const payload = {
+                telegram_user_id,
+                telegram_username,
+                password_hash: randomPassword,
+                expires_at: null, // No expiry for standard
+                last_login: now.toISOString(),
+                membership_status: 'member'
+            };
+
             const { data: newUser, error: insertError } = await supabase
                 .from('users')
-                .insert([{
-                    telegram_user_id,
-                    telegram_username,
-                    password_hash: randomPassword, // Placeholder for the required field
-                    expires_at: expiresAt.toISOString(),
-                    last_login: now.toISOString()
-                }])
+                .insert([payload])
                 .select()
                 .single();
 
             if (insertError) throw insertError;
             targetUser = newUser;
         } else if (user) {
-            // User exists, update last_login and potentially renew expires_at if it's a "re-registration"
-            // The request said: After expired, user harus register ulang
-            // If they are logging in while expired, we refresh the window if they are still in the group.
-
+            // User exists
             const updateData = {
                 last_login: now.toISOString(),
-                telegram_username // Keep username updated
+                telegram_username
             };
 
-            // If expired or near expiry, renew for 3 days
-            if (new Date(user.expires_at) < now) {
-                updateData.expires_at = expiresAt.toISOString();
+            // If user is PRO, check expiry and downgrade if needed
+            if (user.membership_status === 'pro' && user.expires_at && new Date(user.expires_at) < now) {
+                // Downgrade to Standard (Lifetime)
+                console.log(`[AUTH] User ${user.telegram_user_id} PRO expired. Downgrading to standard (Lifetime).`);
+                updateData.membership_status = 'standard';
+                updateData.expires_at = null; // Infinite
             }
 
             const { data: updatedUser, error: updateError } = await supabase
@@ -139,47 +143,12 @@ module.exports = async (req, res) => {
             throw userError;
         }
 
-        // 4. Double check expiry strictly
-        if (new Date(targetUser.expires_at) < now) {
-            return res.status(403).json({ error: 'Your access has expired. Please re-register.' });
-        }
-
-        // 5. Fetch Global Settings
-        const { data: appSettings } = await supabase
-            .from('app_settings')
-            .select('key, value')
-            .in('key', ['maintenance_mode', 'maintenance_end_time', 'active_theme', 'paywall_mode', 'feature_permissions', 'maintenance_whitelist']);
-
-        const settingsMap = {};
-        if (appSettings) {
-            appSettings.forEach(item => settingsMap[item.key] = item.value);
-        }
-
-        let maintenanceMode = settingsMap['maintenance_mode'] || false;
-        let maintenanceEndTime = settingsMap['maintenance_end_time'];
-        const activeTheme = settingsMap['active_theme'] || 'default';
-        const paywallMode = settingsMap['paywall_mode'] || false;
-        const featurePermissions = settingsMap['feature_permissions'] || {};
-        const maintenanceWhitelist = settingsMap['maintenance_whitelist'] || [];
-        const isAdmin = targetUser.telegram_user_id.toString() === (process.env.ADMIN_ID || '');
-        const isWhitelisted = maintenanceWhitelist.includes(targetUser.telegram_user_id.toString());
-
-        // 5.1 Auto-Downgrade Expired PRO Users
-        if (targetUser.membership_status === 'pro' && new Date(targetUser.expires_at) < now) {
-            console.log(`[AUTH] User ${targetUser.telegram_user_id} PRO expired. Downgrading to standard.`);
-            const { data: downgradedUser, error: downgradeError } = await supabase
-                .from('users')
-                .update({
-                    membership_status: 'standard',
-                    expires_at: expiresAt.toISOString() // Give 3 days standard trial
-                })
-                .eq('id', targetUser.id)
-                .select()
-                .single();
-
-            if (!downgradeError) {
-                targetUser = downgradedUser;
-            }
+        // 4. Double check expiry strictly (Only for PRO valid check, or legacy)
+        // If Standard (expires_at is null), allow.
+        if (targetUser.membership_status === 'pro' && targetUser.expires_at && new Date(targetUser.expires_at) < now) {
+            // Should be downgraded already, but just in case
+            // Auto-downgrade block handled above, so this might be redundant or for edge cases.
+            // We allow login as standard now.
         }
 
         // Auto-Disable Logic (Sync with web.js)

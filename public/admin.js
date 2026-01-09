@@ -371,6 +371,62 @@ document.addEventListener('DOMContentLoaded', async () => {
         savePermissionsBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px;"></i> Simpan Pengaturan Fitur';
     };
 
+    // --- 3.1 NEW LIMIT CONFIG LOGIC ---
+    const limitChartToggle = document.getElementById('limit-chart-toggle');
+    const limitAiToggle = document.getElementById('limit-ai-toggle');
+    const limitAiCountInput = document.getElementById('limit-ai-count-input');
+    const saveLimitConfigBtn = document.getElementById('save-limit-config-btn');
+
+    const loadLimitConfig = async () => {
+        try {
+            const res = await fetch('/api/web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
+                body: JSON.stringify({ action: 'admin/settings/get-limit-config' })
+            });
+            const data = await res.json();
+            if (data.success && data.config) {
+                limitChartToggle.checked = data.config.limit_chart_mode;
+                limitAiToggle.checked = data.config.limit_ai_mode;
+                limitAiCountInput.value = data.config.limit_ai_count || 5;
+            }
+        } catch (e) { console.error('Load Limit Config Error:', e); }
+    };
+
+    saveLimitConfigBtn.onclick = async () => {
+        const config = {
+            limit_chart_mode: limitChartToggle.checked,
+            limit_ai_mode: limitAiToggle.checked,
+            limit_ai_count: parseInt(limitAiCountInput.value) || 5
+        };
+
+        saveLimitConfigBtn.disabled = true;
+        saveLimitConfigBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch('/api/web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
+                body: JSON.stringify({
+                    action: 'admin/settings/update-limit-config',
+                    ...config
+                })
+            });
+
+            if (res.ok) {
+                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else {
+                alert('Gagal menyimpan config');
+            }
+        } catch (e) { console.error(e); }
+
+        saveLimitConfigBtn.disabled = false;
+        saveLimitConfigBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 5px;"></i> Simpan Limit Config';
+    };
+
+    // Auto load on init
+    loadLimitConfig();
+
     // --- 4. User Management (Advanced) ---
     const loadUsers = async () => {
         try {

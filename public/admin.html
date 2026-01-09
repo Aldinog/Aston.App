@@ -488,6 +488,51 @@
                     </button>
                 </div>
 
+                <!-- NEW LIMIT CONTROLS -->
+                <div style="margin-bottom: 20px; padding-top:15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <h4 style="font-size: 0.85rem; color: #fbbf24; margin-bottom: 10px;">Usage Limits (Standard User)
+                    </h4>
+
+                    <!-- Chart Limit Toggle -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div>
+                            <div style="font-size: 0.85rem; color: #fff;">Limit Chart (D1 Only)</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">User Standard hanya bisa Timeframe Harian.
+                            </div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="limit-chart-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <!-- AI Limit Toggle -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div>
+                            <div style="font-size: 0.85rem; color: #fff;">Limit AI Usage</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">Batasi penggunaan fitur AI per hari.</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="limit-ai-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <!-- AI Count Input -->
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="font-size: 0.85rem; color: #fff; flex:1;">Max AI Request / Hari:</div>
+                        <input type="number" id="limit-ai-count-input" value="5" min="1"
+                            style="width: 80px; padding: 6px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color:#fff; text-align:center;">
+                    </div>
+
+                    <button id="save-limit-config-btn" class="glass-btn primary-btn"
+                        style="margin-top: 10px; width:100%; font-size:0.8rem;">
+                        <i class="fas fa-save" style="margin-right: 5px;"></i> Simpan Limit Config
+                    </button>
+                </div>
+
                 <div class="feature-permissions-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <!-- Features will be listed here with Standard/PRO toggles -->
                     <div id="permissions-container"

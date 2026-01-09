@@ -37,8 +37,40 @@ async function loadMarked() {
     return marked;
 }
 
-async function handleMarketAction(req, res, action, user, activeTheme, liveModeWhitelist) {
+async function handleMarketAction(req, res, action, user, activeTheme, liveModeWhitelist, limitConfig = {}) {
     const { symbol } = req.body;
+    const { limitChartMode = true, limitAIMode = true, limitAICount = 5 } = limitConfig;
+
+    // --- Helper: Check & Update Usage ---
+    async function checkDailyUsage(user, type, maxLimit) {
+        if (user.membership_status === 'pro') return true; // PRO unlimited
+
+        const today = new Date().toISOString().split('T')[0];
+        let usage = user.daily_usage || {}; // Expect JSONB: { date: "2024-01-01", ai_count: 0 }
+
+        // Reset if new day
+        if (usage.date !== today) {
+            usage = { date: today, ai_count: 0 };
+        }
+
+        if (type === 'ai') {
+            if (usage.ai_count >= maxLimit) return false;
+            usage.ai_count++;
+        }
+
+        // Update DB
+        // Note: This is async and "fire and forget" or await depending on strictness.
+        // We await to be safe.
+        try {
+            await supabase.from('users').update({ daily_usage: usage }).eq('id', user.id);
+            user.daily_usage = usage; // Update local obj
+            return true;
+        } catch (e) {
+            console.error('Failed to update usage:', e);
+            return true; // Fail open if DB error?
+        }
+    }
+
     let result = '';
 
     const actionsWithoutSymbol = ['sectors', 'sector-emitents'];
@@ -89,6 +121,14 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             let targetAnalysisSym = symbol;
             if (targetAnalysisSym && !targetAnalysisSym.includes('.') && /^[A-Z]{4}$/.test(targetAnalysisSym)) {
                 targetAnalysisSym = `${targetAnalysisSym}.JK`;
+            }
+
+            // --- AI LIMIT CHECK ---
+            if (limitAIMode) {
+                const allowed = await checkDailyUsage(user, 'ai', limitAICount);
+                if (!allowed) {
+                    return res.status(403).json({ error: `Limit Harian AI Tercapai (${limitAICount}x). Upgrade ke PRO untuk Unlimited.` });
+                }
             }
 
             const candles = await getPersistentCandles(targetAnalysisSym, '1d', 50);
@@ -160,11 +200,27 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             }
 
         case 'signal':
+            // --- AI LIMIT CHECK ---
+            if (limitAIMode) {
+                const allowed = await checkDailyUsage(user, 'ai', 5);
+                if (!allowed) {
+                    return res.status(403).json({ error: 'Limit Harian Signal AI Tercapai (5x). Upgrade ke PRO untuk Unlimited.' });
+                }
+            }
+
             const { generateSignal } = await import('../../src/utils/signal.js');
             result = await generateSignal(symbol);
             break;
 
         case 'review':
+            // --- AI LIMIT CHECK ---
+            if (limitAIMode) {
+                const allowed = await checkDailyUsage(user, 'ai', 5);
+                if (!allowed) {
+                    return res.status(403).json({ error: 'Limit Harian Review Tercapai (5x). Upgrade ke PRO untuk Unlimited.' });
+                }
+            }
+
             const { generateReview } = await import('../../src/utils/review.js');
             const { entry, sl, mode } = req.body;
             if (!entry || !mode) {
