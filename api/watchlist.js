@@ -242,6 +242,48 @@ module.exports = async (req, res) => {
             const quote = await fetchQuote(symbol);
             if (!quote) return res.status(404).json({ error: 'Symbol not found' });
 
+            // --- LIMIT CHECK ---
+            // 1. Fetch App Settings (Paywall Mode)
+            const { data: pwSettings } = await supabase
+                .from('app_settings')
+                .select('value')
+                .eq('key', 'paywall_mode')
+                .single();
+            const paywallMode = pwSettings ? (pwSettings.value === true || pwSettings.value === 'true') : false;
+
+            // 2. Fetch User Status (JWT doesn't have it)
+            const { data: userData } = await supabase
+                .from('users')
+                .select('membership_status')
+                .eq('id', user.id)
+                .single();
+
+            const status = userData ? userData.membership_status : 'standard';
+
+            // 3. Define Limit
+            let limit = 999; // Unlimited default
+            if (paywallMode) {
+                limit = (status === 'pro') ? 8 : 4;
+            } else {
+                // Even if Paywall OFF, we might want a sanity cap, but user requested 'unlimited' if OFF.
+                // Let's keep it effectively unlimited or a high safe number like 50.
+                limit = 50;
+            }
+
+            // 4. Count Current Watchlist
+            const { count, error: countError } = await supabase
+                .from('user_watchlist')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id);
+
+            if (countError) throw countError;
+
+            if (count >= limit) {
+                return res.status(403).json({
+                    error: `Limit Watchlist Tercapai (${limit}). Hapus beberapa saham untuk menambah baru.`
+                });
+            }
+
             // Upsert Cache
             const cachePayload = {
                 symbol: quote.symbol.replace('.JK', ''),

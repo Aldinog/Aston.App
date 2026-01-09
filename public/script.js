@@ -523,7 +523,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!container) return;
 
         // Limit Logic & Counter
-        const limit = (isPaywallMode && userMembershipStatus === 'standard') ? 4 : 8;
+        // Limit Logic & Counter
+        let limit = 50; // Default high safety cap
+        if (isPaywallMode) {
+            limit = (userMembershipStatus === 'standard') ? 4 : 8;
+        } else {
+            limit = 50; // Unlimited effectively
+        }
         const currentCount = newData.length;
         const isFull = currentCount >= limit;
 
