@@ -154,6 +154,7 @@ module.exports = async (req, res) => {
         // --- FETCH APP SETTINGS (Maintenance, Theme, Paywall) ---
         let maintenanceMode = false;
         let maintenanceEndTime = null;
+        let isWhitelisted = false;
         let activeTheme = 'default';
         let paywallMode = false;
         let featurePermissions = {};
@@ -168,17 +169,28 @@ module.exports = async (req, res) => {
             const themeSetting = appSettings.find(s => s.key === 'active_theme');
             const paywallSetting = appSettings.find(s => s.key === 'paywall_mode');
             const permsSetting = appSettings.find(s => s.key === 'feature_permissions');
+            const whitelistSetting = appSettings.find(s => s.key === 'maintenance_whitelist');
 
             if (modeSetting) maintenanceMode = modeSetting.value;
             if (endSetting) maintenanceEndTime = endSetting.value;
             if (themeSetting) activeTheme = themeSetting.value;
             if (paywallSetting) paywallMode = paywallSetting.value;
             if (permsSetting) featurePermissions = permsSetting.value;
+
+            // Check whitelist
+            if (whitelistSetting && whitelistSetting.value && Array.isArray(whitelistSetting.value)) {
+                // Determine user string to check (either ID or Username if we supported that)
+                const userIdStr = targetUser.telegram_user_id.toString();
+                // Check if ID is in whitelist
+                if (whitelistSetting.value.includes(userIdStr)) {
+                    isWhitelisted = true;
+                }
+            }
         }
 
         const isAdmin = process.env.ADMIN_ID && targetUser.telegram_user_id.toString() === process.env.ADMIN_ID.toString();
-        // Optional: Add whitelist logic here if needed, for now assume only Admin is whitelisted in maintenance
-        const isWhitelisted = isAdmin;
+        // Admin is always whitelisted
+        if (isAdmin) isWhitelisted = true;
 
         // Auto-Disable Logic (Sync with web.js)
         if (maintenanceMode && maintenanceEndTime) {

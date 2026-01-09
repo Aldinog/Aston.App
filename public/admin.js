@@ -285,10 +285,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // We get initial settings from login response for speed
         const user = loginData.user;
         isPaywallActive = user.paywall_mode || false;
-        currentPermissions = user.feature_permissions || {};
 
         updatePaywallUI(isPaywallActive);
-        renderPermissions(currentPermissions);
     };
 
     const updatePaywallUI = (active) => {
@@ -299,77 +297,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             paywallBtn.style.background = '#f59e0b';
             paywallBtn.style.color = '#fff';
         } else {
-            paywallBtn.style.background = '';
+            paywallBtn.style.background = ''; // Reset
             paywallBtn.style.color = '';
         }
     };
 
-    const renderPermissions = (perms) => {
-        const features = [
-            { key: 'analysis', label: 'Analisis AI' },
-            { key: 'signal', label: 'Signal AI' },
-            { key: 'review', label: 'Review Entry' },
-            { key: 'chart-live', label: 'Smart Chart (Live)' },
-            { key: 'chart-data', label: 'Chart Data Access' },
-            { key: 'fundamental', label: 'Fundamental' },
-            { key: 'proxy', label: 'Akumulasi Bandar' },
-            { key: 'profile', label: 'Profil Emiten' },
-            { key: 'avg', label: 'Kalkulator Avg' },
-            { key: 'sectors', label: 'Rotasi Sektor' }
-        ];
-
-        permissionsContainer.innerHTML = features.map(f => {
-            const currentLevel = perms[f.key] || 'standard';
-            return `
-                <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px;">
-                    <div style="font-size: 0.8rem; font-weight: 600; color: #94a3b8;">${f.label}</div>
-                    <select class="perm-select" data-key="${f.key}" style="background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px; font-size: 0.8rem; outline: none;">
-                        <option value="standard" ${currentLevel === 'standard' ? 'selected' : ''}>Standard (Free)</option>
-                        <option value="pro" ${currentLevel === 'pro' ? 'selected' : ''}>PRO (Paid)</option>
-                    </select>
-                </div>
-            `;
-        }).join('');
-    };
-
     paywallBtn.onclick = async () => {
         const newState = !isPaywallActive;
+        // Optimistic UI
+        updatePaywallUI(newState);
+
         try {
-            const res = await fetch('/api/web', {
+            await fetch('/api/web', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
                 body: JSON.stringify({ action: 'admin/settings/update-paywall', paywall_mode: newState })
             });
-            if (res.ok) {
-                updatePaywallUI(newState);
-                if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-            }
-        } catch (e) { console.error(e); }
+
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        } catch (e) {
+            console.error(e);
+            updatePaywallUI(!newState); // Revert
+        }
     };
 
-    savePermissionsBtn.onclick = async () => {
-        const selects = document.querySelectorAll('.perm-select');
-        const newPerms = {};
-        selects.forEach(s => newPerms[s.dataset.key] = s.value);
-
-        savePermissionsBtn.disabled = true;
-        savePermissionsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-        try {
-            const res = await fetch('/api/web', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
-                body: JSON.stringify({ action: 'admin/settings/update-permissions', permissions: newPerms })
-            });
-            if (res.ok) {
-                currentPermissions = newPerms;
-                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            }
-        } catch (e) { console.error(e); }
-
-        savePermissionsBtn.disabled = false;
-        savePermissionsBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px;"></i> Simpan Pengaturan Fitur';
-    };
+    // FEATURE PERMISSIONS REMOVED BY USER REQUEST
+    const renderPermissions = (perms) => { return; };
+    if (savePermissionsBtn) {
+        savePermissionsBtn.onclick = () => { };
+        savePermissionsBtn.style.display = 'none';
+        if (permissionsContainer) permissionsContainer.style.display = 'none';
+    }
 
     // --- 3.1 NEW LIMIT CONFIG LOGIC ---
     const limitChartToggle = document.getElementById('limit-chart-toggle');
