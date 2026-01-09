@@ -151,9 +151,12 @@ module.exports = async (req, res) => {
             // We allow login as standard now.
         }
 
-        // --- FETCH APP SETTINGS (Maintenance Mode) ---
+        // --- FETCH APP SETTINGS (Maintenance, Theme, Paywall) ---
         let maintenanceMode = false;
         let maintenanceEndTime = null;
+        let activeTheme = 'default';
+        let paywallMode = false;
+        let featurePermissions = {};
 
         const { data: appSettings } = await supabase
             .from('app_settings')
@@ -162,8 +165,15 @@ module.exports = async (req, res) => {
         if (appSettings) {
             const modeSetting = appSettings.find(s => s.key === 'maintenance_mode');
             const endSetting = appSettings.find(s => s.key === 'maintenance_end_time');
+            const themeSetting = appSettings.find(s => s.key === 'active_theme');
+            const paywallSetting = appSettings.find(s => s.key === 'paywall_active');
+            const permsSetting = appSettings.find(s => s.key === 'feature_permissions');
+
             if (modeSetting) maintenanceMode = modeSetting.value;
             if (endSetting) maintenanceEndTime = endSetting.value;
+            if (themeSetting) activeTheme = themeSetting.value;
+            if (paywallSetting) paywallMode = paywallSetting.value;
+            if (permsSetting) featurePermissions = permsSetting.value;
         }
 
         const isAdmin = process.env.ADMIN_ID && targetUser.telegram_user_id.toString() === process.env.ADMIN_ID.toString();
@@ -195,6 +205,9 @@ module.exports = async (req, res) => {
         }
 
         // 6. Generate Session Token (JWT)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 3);
+
         const tokenToken = jwt.sign(
             { id: targetUser.id, telegram_user_id: targetUser.telegram_user_id, is_admin: isAdmin },
             process.env.JWT_SECRET || 'fallback-secret-aston',
