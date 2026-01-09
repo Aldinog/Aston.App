@@ -117,7 +117,8 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 const chartData = await getChartData(symbol, interval, limit);
                 console.log(`[API] Returning chart data: ${chartData.candles.length} candles, ${chartData.markers.length} markers`);
 
-                const isLiveEligible = liveModeWhitelist.includes(user.telegram_user_id.toString());
+                // OPEN ACCESS: All users are now eligible for live charts thanks to Smart Queue
+                const isLiveEligible = true;
 
                 return res.status(200).json({
                     success: true,

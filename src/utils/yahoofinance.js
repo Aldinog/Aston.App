@@ -71,6 +71,60 @@ async function triggerAutoCooldown(reason) {
     }
 }
 
+// --- SMART QUEUE & COALESCING ---
+class SmartFetcher {
+    constructor(maxConcurrent = 2) {
+        this.maxConcurrent = maxConcurrent;
+        this.running = 0;
+        this.queue = [];
+        this.pending = new Map(); // Untuk Coalescing (Deduplikasi)
+    }
+
+    /**
+     * Schedule a fetch operation.
+     * key: Unique identifier for the request (e.g. "BBCA.JK_1d") to enable coalescing.
+     * fn: Async function to execute.
+     */
+    async schedule(key, fn) {
+        // 1. Coalescing: Check if identical request is already running/pending
+        if (this.pending.has(key)) {
+            // console.log(`[QUEUE] Nebeng request untuk: ${key}`);
+            return this.pending.get(key);
+        }
+
+        // 2. Create new promise wrapper
+        const promise = new Promise((resolve, reject) => {
+            this.queue.push({ fn, resolve, reject, key });
+            this.process();
+        });
+
+        // Save to pending map so others can join
+        this.pending.set(key, promise);
+
+        return promise;
+    }
+
+    async process() {
+        if (this.running >= this.maxConcurrent || this.queue.length === 0) return;
+
+        this.running++;
+        const item = this.queue.shift();
+
+        try {
+            const result = await item.fn();
+            item.resolve(result);
+        } catch (err) {
+            item.reject(err);
+        } finally {
+            this.running--;
+            this.pending.delete(item.key); // Remove from pending map once done
+            this.process(); // Process next item
+        }
+    }
+}
+
+const smartFetcher = new SmartFetcher(2); // Max 2 concurrent requests to YF
+
 /**
  * Fetch last N daily candles from Yahoo Finance
  */
@@ -109,14 +163,24 @@ async function fetchHistorical(symbol, opts = {}) {
     // --- Check In-Memory Cache ---
     const cacheKey = `${query}_${interval}_${limit}`;
     const cached = historicalCache.get(cacheKey);
+
+    // Only use cache if NOT forceRefresh
     if (!opts.forceRefresh && cached && (Date.now() - cached.timestamp < CACHE_TTL_HISTORICAL)) {
         console.log(`[CACHE HIT] Historical data for ${cacheKey}`);
         return cached.data;
     }
 
+    // Unique key for Coalescing: Symbol + Interval
+    // We ignore 'limit' for coalescing key because we usually fetch a standard set anyway, 
+    // but strictness helps. For Live Quote, usually limit is small.
+    const requestKey = `${query}_${fetchInterval}`;
+
     try {
-        // Use chart() instead of historical() for better support (Intraday)
-        const result = await withRetry(() => yahooFinance.chart(query, queryOptions));
+        // Use SmartFetcher for Queue & Coalescing
+        const result = await smartFetcher.schedule(requestKey, async () => {
+            // console.log(`[YF FETCH] Executing ${query}...`);
+            return await withRetry(() => yahooFinance.chart(query, queryOptions));
+        });
 
         if (!result || !result.quotes || result.quotes.length === 0) return [];
 
@@ -316,9 +380,9 @@ async function fetchProfile(symbol) {
     }
 
     try {
-        const result = await withRetry(() => yahooFinance.quoteSummary(query, {
+        const result = await smartFetcher.schedule(`profile_${query}`, () => withRetry(() => yahooFinance.quoteSummary(query, {
             modules: ["assetProfile", "price", "summaryProfile"]
-        }));
+        })));
 
         if (!result) return null;
 
@@ -374,7 +438,8 @@ async function fetchSectors() {
     }
 
     try {
-        const results = await withRetry(() => yahooFinance.quote(sectorSymbols));
+        // Sectors are always the same set, use a static key
+        const results = await smartFetcher.schedule('sectors_all', () => withRetry(() => yahooFinance.quote(sectorSymbols)));
 
         const nameMap = {
             'IDXENERGY.JK': 'Energy',
@@ -439,7 +504,7 @@ async function fetchQuote(symbol) {
     }
 
     try {
-        const quote = await yahooFinance.quote(query);
+        const quote = await smartFetcher.schedule(`quote_${query}`, () => yahooFinance.quote(query));
         return quote;
     } catch (err) {
         console.error(`YF Quote Error for ${query}:`, err.message);
@@ -495,7 +560,7 @@ async function fetchFundamentals(symbol) {
             "calendarEvents"
         ];
 
-        const result = await yahooFinance.quoteSummary(query, { modules });
+        const result = await smartFetcher.schedule(`fundamentals_${query}`, () => yahooFinance.quoteSummary(query, { modules }));
         if (!result) return null;
 
         // Fetch News (Search API)
