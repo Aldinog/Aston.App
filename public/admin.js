@@ -451,7 +451,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         body.innerHTML = users.map(user => {
             const name = user.telegram_username || 'No Username';
             const level = user.membership_status || 'standard';
-            const expiryDate = user.expires_at ? new Date(user.expires_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : 'No Date';
+            const d = user.expires_at ? new Date(user.expires_at) : null;
+            let expiryDate = 'No Date';
+            if (d) {
+                if (d.getFullYear() > 3000) expiryDate = 'Lifetime';
+                else expiryDate = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+            }
             const isExpired = user.expires_at && new Date(user.expires_at) < new Date();
 
             return `

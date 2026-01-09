@@ -153,7 +153,7 @@ module.exports = async (req, res) => {
                     .from('users')
                     .update({
                         membership_status: 'standard',
-                        expires_at: null // Infinite
+                        expires_at: new Date('9999-12-31').toISOString() // Infinite
                     })
                     .eq('id', user.id)
                     .select()

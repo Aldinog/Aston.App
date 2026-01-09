@@ -102,7 +102,7 @@ module.exports = async (req, res) => {
                 telegram_user_id,
                 telegram_username,
                 password_hash: randomPassword,
-                expires_at: null, // No expiry for standard
+                expires_at: new Date('9999-12-31').toISOString(), // No expiry for standard (using far future date for DB constraint)
                 last_login: now.toISOString(),
                 membership_status: 'member'
             };
@@ -127,7 +127,7 @@ module.exports = async (req, res) => {
                 // Downgrade to Standard (Lifetime)
                 console.log(`[AUTH] User ${user.telegram_user_id} PRO expired. Downgrading to standard (Lifetime).`);
                 updateData.membership_status = 'standard';
-                updateData.expires_at = null; // Infinite
+                updateData.expires_at = new Date('9999-12-31').toISOString(); // Infinite
             }
 
             const { data: updatedUser, error: updateError } = await supabase
