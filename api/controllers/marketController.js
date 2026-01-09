@@ -127,7 +127,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             if (limitAIMode) {
                 const allowed = await checkDailyUsage(user, 'ai', limitAICount);
                 if (!allowed) {
-                    return res.status(403).json({ error: `Limit Harian AI Tercapai (${limitAICount}x). Upgrade ke PRO untuk Unlimited.` });
+                    return res.status(403).json({ error: `Count ${limitAICount}/${limitAICount} Limit Harian AI Tercapai, coba lagi besok...` });
                 }
             }
 
@@ -212,7 +212,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             if (limitAIMode) {
                 const allowed = await checkDailyUsage(user, 'ai', 5);
                 if (!allowed) {
-                    return res.status(403).json({ error: 'Limit Harian Signal AI Tercapai (5x). Upgrade ke PRO untuk Unlimited.' });
+                    return res.status(403).json({ error: `Count ${limitAICount}/${limitAICount} Limit Harian AI Tercapai, coba lagi besok...` });
                 }
             }
 
@@ -225,7 +225,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             if (limitAIMode) {
                 const allowed = await checkDailyUsage(user, 'ai', 5);
                 if (!allowed) {
-                    return res.status(403).json({ error: 'Limit Harian Review Tercapai (5x). Upgrade ke PRO untuk Unlimited.' });
+                    return res.status(403).json({ error: `Count ${limitAICount}/${limitAICount} Limit Harian AI Tercapai, coba lagi besok...` });
                 }
             }
 

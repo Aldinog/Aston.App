@@ -69,6 +69,27 @@ try {
     const timeBtns = document.querySelectorAll('.time-btn');
     timeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
+            // --- LIMIT CHECK ---
+            const interval = btn.dataset.interval;
+            try {
+                const cachedUser = localStorage.getItem('cached_user_data');
+                if (cachedUser) {
+                    const user = JSON.parse(cachedUser);
+                    // Check if Limit Chart Mode is ON (default true if not set, or specific flag)
+                    // We assume it exists in user object or global config. Use 'paywall_mode' as proxy or specific 'limit_chart_mode' if available.
+                    // Based on previous files, 'paywall_mode' seems to be the main toggle for features.
+                    const isPaywall = user.paywall_mode || false;
+                    const isStandard = (user.membership_status || 'standard') === 'standard';
+
+                    if (isPaywall && isStandard && interval !== '1d') {
+                        // Show Overlay
+                        const pwOverlay = document.getElementById('paywall-overlay');
+                        if (pwOverlay) pwOverlay.classList.remove('hidden');
+                        return; // Stop execution
+                    }
+                }
+            } catch (e) { console.warn('Limit check failed', e); }
+
             timeBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             loadData(btn.dataset.interval);
