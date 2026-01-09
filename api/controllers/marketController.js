@@ -125,7 +125,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
 
             // --- AI LIMIT CHECK ---
             if (limitAIMode) {
-                const allowed = await checkDailyUsage(user, 'ai', limitAICount);
+                let allowed = await checkDailyUsage(user, 'ai', limitAICount);
                 if (!allowed) {
                     return res.status(403).json({ error: `Count ${limitAICount}/${limitAICount} Limit Harian AI Tercapai, coba lagi besok...` });
                 }
