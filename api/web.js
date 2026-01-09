@@ -271,7 +271,7 @@ module.exports = async (req, res) => {
         // Let's assume session.users has it. If not, we might fail a bit, but we can patch 'daily_usage' locally.
 
         // 2. Try Market Controller
-        const marketResponse = await handleMarketAction(req, res, action, user, activeTheme, liveModeWhitelist, { limitChartMode, limitAIMode });
+        const marketResponse = await handleMarketAction(req, res, action, user, activeTheme, liveModeWhitelist, { limitChartMode, limitAIMode, limitAICount });
         if (marketResponse) return marketResponse;
 
         // 3. Fallback
