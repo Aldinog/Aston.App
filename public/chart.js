@@ -239,6 +239,24 @@ async function loadData(interval) {
         });
 
         currentInterval = interval;
+
+        // Handle 403 (Limit) from Backend
+        if (response.status === 403) {
+            const res = await response.json();
+            // Check if it's the limit error
+            if (res.error && res.error.includes('Limit Timeframe')) {
+                const pwOverlay = document.getElementById('paywall-overlay');
+                if (pwOverlay) pwOverlay.classList.remove('hidden');
+
+                // Revert UI to D1 if possible, or just stop spinner
+                stopLiveUpdates();
+                if (spinnerText) spinnerText.innerText = 'Access Denied';
+            } else {
+                if (spinnerText) spinnerText.innerText = res.error || 'Access Denied';
+            }
+            return; // Stop execution
+        }
+
         const res = await response.json();
         if (handleCooldown(res)) return;
 

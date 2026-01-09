@@ -250,11 +250,20 @@ module.exports = async (req, res) => {
         }
 
         // --- Fetch Limit Settings ---
-        let limitChartMode = true; // Default ON
-        let limitAIMode = true; // Default ON
+        let limitChartMode = true; // Default ON if Paywall is ON
+        let limitAIMode = true; // Default ON if Paywall is ON
+        let limitAICount = 5;
 
-        if (settingsMap['limit_chart_mode'] !== undefined) limitChartMode = settingsMap['limit_chart_mode'];
-        if (settingsMap['limit_ai_mode'] !== undefined) limitAIMode = settingsMap['limit_ai_mode'];
+        // Sync with Paywall Mode (Master Switch)
+        if (!paywallMode) {
+            limitChartMode = false;
+            limitAIMode = false;
+        } else {
+            // Only read specific toggles if Paywall is ON
+            if (settingsMap['limit_chart_mode'] !== undefined) limitChartMode = settingsMap['limit_chart_mode'];
+            if (settingsMap['limit_ai_mode'] !== undefined) limitAIMode = settingsMap['limit_ai_mode'];
+            if (settingsMap['limit_ai_count'] !== undefined) limitAICount = Number(settingsMap['limit_ai_count']);
+        }
 
         // --- Fetch User Usage Stats ---
         // We need to re-fetch user to get 'daily_usage' JSONB column if it exists/changed
