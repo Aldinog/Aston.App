@@ -151,6 +151,25 @@ module.exports = async (req, res) => {
             // We allow login as standard now.
         }
 
+        // --- FETCH APP SETTINGS (Maintenance Mode) ---
+        let maintenanceMode = false;
+        let maintenanceEndTime = null;
+
+        const { data: appSettings } = await supabase
+            .from('app_settings')
+            .select('key, value');
+
+        if (appSettings) {
+            const modeSetting = appSettings.find(s => s.key === 'maintenance_mode');
+            const endSetting = appSettings.find(s => s.key === 'maintenance_end_time');
+            if (modeSetting) maintenanceMode = modeSetting.value;
+            if (endSetting) maintenanceEndTime = endSetting.value;
+        }
+
+        const isAdmin = process.env.ADMIN_ID && targetUser.telegram_user_id.toString() === process.env.ADMIN_ID.toString();
+        // Optional: Add whitelist logic here if needed, for now assume only Admin is whitelisted in maintenance
+        const isWhitelisted = isAdmin;
+
         // Auto-Disable Logic (Sync with web.js)
         if (maintenanceMode && maintenanceEndTime) {
             const nowCheck = new Date();
