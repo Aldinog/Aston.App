@@ -205,9 +205,6 @@ module.exports = async (req, res) => {
         }
 
         // 6. Generate Session Token (JWT)
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 3);
-
         const tokenToken = jwt.sign(
             { id: targetUser.id, telegram_user_id: targetUser.telegram_user_id, is_admin: isAdmin },
             process.env.JWT_SECRET || 'fallback-secret-aston',
