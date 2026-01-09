@@ -153,6 +153,14 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             const limit = req.body.limit || 300;
             console.log(`[API] Processing chart request for ${symbol} interval ${interval} limit ${limit}`);
 
+            // --- CHART LIMIT CHECK for Standard Users ---
+            if (limitChartMode && user.membership_status !== 'pro') {
+                const allowedIntervals = ['1d', 'd1'];
+                if (!allowedIntervals.includes(interval.toLowerCase())) {
+                    return res.status(403).json({ error: 'Limit Timeframe (D1 Only). Upgrade PRO untuk Intraday.' });
+                }
+            }
+
             try {
                 const chartData = await getChartData(symbol, interval, limit);
                 console.log(`[API] Returning chart data: ${chartData.candles.length} candles, ${chartData.markers.length} markers`);

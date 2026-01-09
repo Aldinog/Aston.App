@@ -120,7 +120,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             await delayPromise; // Ensure user sees typing animation
             hideTyping();
 
-            if (!response.ok) throw new Error("Server Error");
+            if (!response.ok) {
+                // Try to parse error message from JSON
+                try {
+                    const errRes = await response.json();
+                    if (errRes.error) throw new Error(errRes.error);
+                } catch (jsonErr) {
+                    // If parsing fails or no error field, stick to generic
+                    if (jsonErr.message !== "Server Error") throw jsonErr; // Re-throw if it's the specific error
+                }
+                throw new Error("Gagal memproses permintaan (Server Error).");
+            }
 
             const res = await response.json();
 
@@ -151,7 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) {
             hideTyping();
             console.error(e);
-            addAiMessage("⚠️ Terjadi kesalahan koneksi. Silakan coba lagi.");
+            addAiMessage(`⚠️ ${e.message}`);
         }
     }
 
