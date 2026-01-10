@@ -710,6 +710,14 @@
                             <td id="val-pbv" class="value-col">-</td>
                         </tr>
                         <tr>
+                            <td class="label-col">Price / Sales (P/S)</td>
+                            <td id="val-ps" class="value-col">-</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">EV / EBITDA</td>
+                            <td id="val-ev-ebitda" class="value-col">-</td>
+                        </tr>
+                        <tr>
                             <td class="label-col">Enterprise Value</td>
                             <td id="val-ev" class="value-col">-</td>
                         </tr>
@@ -828,6 +836,25 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Top Whales List -->
+            <div id="whales-card" class="glass-card" style="display: none;">
+                <h3 class="card-title"><i class="fa-solid fa-landmark"></i> Top Institutional Holders (Whales)</h3>
+                <div class="data-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Lembaga</th>
+                                <th>Kepemilikan</th>
+                                <th>Nilai</th>
+                            </tr>
+                        </thead>
+                        <tbody id="whales-body">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- --- Tab: Quarterly --- -->
@@ -869,6 +896,10 @@
                         <tr>
                             <td class="label-col">Target Price (Mean)</td>
                             <td id="ins-target" class="value-col highlight-text">-</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Potential Upside</td>
+                            <td id="ins-upside" class="value-col">-</td>
                         </tr>
                         <tr>
                             <td class="label-col">Consensus Sentiment</td>

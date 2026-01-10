@@ -150,6 +150,8 @@ function renderData(data) {
     document.getElementById('val-fpe').innerText = data.valuation.forwardPE ? data.valuation.forwardPE.toFixed(2) + 'x' : '-';
     document.getElementById('val-peg').innerText = data.valuation.pegRatio ? data.valuation.pegRatio.toFixed(2) : '-';
     document.getElementById('val-pbv').innerText = data.valuation.pbRatio ? data.valuation.pbRatio.toFixed(2) + 'x' : '-';
+    document.getElementById('val-ps').innerText = data.valuation.priceToSales ? data.valuation.priceToSales.toFixed(2) + 'x' : '-';
+    document.getElementById('val-ev-ebitda').innerText = data.valuation.evToEbitda ? data.valuation.evToEbitda.toFixed(2) + 'x' : '-';
     document.getElementById('val-ev').innerText = fmtCap(data.valuation.enterpriceValue);
 
     // Growth & Profitability
@@ -177,6 +179,9 @@ function renderData(data) {
 
     // Quarterly Rendering
     renderQuarterly(data);
+
+    // Whales Rendering
+    renderWhales(data);
 
     // Advanced Data
     renderInsights(data);
@@ -213,6 +218,37 @@ function renderQuarterly(data) {
         });
     } else {
         qBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; opacity: 0.5;">Data kuartalan tidak tersedia.</td></tr>';
+    }
+}
+
+/**
+ * Render Whales (Institutional Holders)
+ */
+function renderWhales(data) {
+    const whaleBody = document.getElementById('whales-body');
+    const whaleCard = document.getElementById('whales-card');
+    if (!whaleBody || !whaleCard) return;
+
+    whaleBody.innerHTML = '';
+
+    const owners = data.holders.institutionOwnership ? data.holders.institutionOwnership.ownershipList : [];
+
+    if (owners && owners.length > 0) {
+        whaleCard.style.display = 'block';
+        owners.slice(0, 10).forEach(owner => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="label-col" style="font-size: 0.8rem; line-height: 1.3;">
+                    ${owner.organization}
+                    <div style="font-size: 0.7rem; color: var(--text-secondary);">${fmtDate(owner.reportDate)}</div>
+                </td>
+                <td class="value-col">${fmtPct(owner.pctHeld)}</td>
+                <td class="value-col">${fmtCap(owner.value)}</td>
+            `;
+            whaleBody.appendChild(tr);
+        });
+    } else {
+        whaleCard.style.display = 'none';
     }
 }
 
@@ -257,6 +293,9 @@ function renderInsights(data) {
     const targetPrice = data.target.mean;
     document.getElementById('ins-target').innerText = targetPrice ?
         data.currency + ' ' + Math.floor(targetPrice).toLocaleString('id-ID') : '-';
+
+    document.getElementById('ins-upside').innerHTML = data.target.upside != null ?
+        colorizeGrowth(data.target.upside) : '-';
 
     // Consensus Sentiment Bar
     const consensus = data.target.consensus;

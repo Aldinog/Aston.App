@@ -605,6 +605,7 @@ async function fetchFundamentals(symbol) {
                 forwardPE: summary.forwardPE,
                 pegRatio: stats.pegRatio,
                 pbRatio: stats.priceToBook,
+                priceToSales: summary.priceToSalesTrailing12Months || stats.priceToSales,
                 enterpriceValue: stats.enterpriseValue,
                 evToRevenue: stats.enterpriseToRevenue,
                 evToEbitda: stats.enterpriseToEbitda
@@ -642,6 +643,7 @@ async function fetchFundamentals(symbol) {
             target: {
                 mean: fin.targetMeanPrice,
                 median: fin.targetMedianPrice,
+                upside: fin.targetMeanPrice ? ((fin.targetMeanPrice - price.regularMarketPrice) / price.regularMarketPrice) : null,
                 rec: fin.recommendationKey,
                 consensus: result.recommendationTrend ? result.recommendationTrend.trend[0] : null
             },
