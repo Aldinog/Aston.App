@@ -135,7 +135,7 @@ function renderData(data) {
 
     // Header
     const sym = data.symbol || '';
-    displaySymbol.innerText = sym.replace('.JK', '');
+    displaySymbol.innerText = sym.split('.')[0];
     displayName.innerText = data.name || 'Unknown Ticker';
     displayPrice.innerText = fmtNum(data.price);
     displayCurrency.innerText = data.currency || 'IDR';
@@ -471,7 +471,7 @@ function renderPeers(data) {
             div.innerHTML = `
                 <div class="news-content" style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <div class="news-title" style="color: var(--accent-primary); border: none; font-size: 1rem; font-weight: 700;">${symbol}</div>
+                        <div class="news-title" style="color: var(--accent-primary); border: none; font-size: 1rem; font-weight: 700;">${symbol.split('.')[0]}</div>
                         <div style="font-size: 0.75rem; color: var(--text-secondary);">Klik untuk analisa mendalam</div>
                     </div>
                     <i class="fa-solid fa-chevron-right" style="opacity: 0.5;"></i>
