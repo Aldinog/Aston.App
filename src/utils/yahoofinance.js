@@ -551,6 +551,7 @@ async function fetchFundamentals(symbol) {
             "financialData",
             "majorHoldersBreakdown",
             "insiderHolders",
+            "insiderTransactions",
             "earningsHistory",
             "earnings",
             "institutionOwnership",
@@ -639,6 +640,7 @@ async function fetchFundamentals(symbol) {
                 fundOwnership: result.fundOwnership || null
             },
             earnings: result.earningsHistory || {},
+            insiderTransactions: result.insiderTransactions || {},
             quarterly: result.earnings && result.earnings.financialsChart ? result.earnings.financialsChart.quarterly : [],
             target: {
                 mean: fin.targetMeanPrice,

@@ -185,6 +185,7 @@ function renderData(data) {
 
     // Advanced Data
     renderInsights(data);
+    renderInsiders(data);
     renderDividends(data);
 }
 
@@ -242,13 +243,58 @@ function renderWhales(data) {
                     ${owner.organization}
                     <div style="font-size: 0.7rem; color: var(--text-secondary);">${fmtDate(owner.reportDate)}</div>
                 </td>
-                <td class="value-col">${fmtPct(owner.pctHeld)}</td>
+                <td class="value-col">
+                    <div>${fmtPct(owner.pctHeld)}</div>
+                    ${owner.pctChange ? `<div style="font-size: 0.65rem; color: ${owner.pctChange >= 0 ? 'var(--positive)' : 'var(--negative)'}">${owner.pctChange >= 0 ? '+' : ''}${(owner.pctChange * 100).toFixed(2)}%</div>` : ''}
+                </td>
                 <td class="value-col">${fmtCap(owner.value)}</td>
             `;
             whaleBody.appendChild(tr);
         });
     } else {
         whaleCard.style.display = 'none';
+    }
+}
+
+/**
+ * Render Insider Transactions
+ */
+function renderInsiders(data) {
+    const insBody = document.getElementById('insider-body');
+    const insCard = document.getElementById('insider-card');
+    if (!insBody || !insCard) return;
+
+    insBody.innerHTML = '';
+
+    // Yahoo Finance return insiderTransactions.transactions array
+    const txs = data.insiderTransactions ? data.insiderTransactions.transactions : [];
+
+    if (txs && txs.length > 0) {
+        insCard.style.display = 'block';
+        txs.slice(0, 10).forEach(tx => {
+            const tr = document.createElement('tr');
+            const isBuy = tx.transactionText ? tx.transactionText.toLowerCase().includes('buy') : true;
+            const colorClass = isBuy ? 'tag-positive' : 'tag-negative';
+            const icon = isBuy ? 'fa-plus' : 'fa-minus';
+
+            tr.innerHTML = `
+                <td class="label-col" style="font-size: 0.8rem; line-height: 1.3;">
+                    <div style="font-weight: 700; color: var(--text-primary);">${tx.filerName || 'Unknown'}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary);">${tx.filerRelation || ''}</div>
+                </td>
+                <td class="value-col">
+                    <span class="tag ${colorClass}">${tx.transactionText || 'Trans'}</span>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 4px;">${fmtDate(tx.startDate)}</div>
+                </td>
+                <td class="value-col">
+                    <div style="font-size: 0.85rem;">${fmtNum(tx.shares)}</div>
+                    <div style="font-size: 0.65rem; opacity: 0.6;">Shares</div>
+                </td>
+            `;
+            insBody.appendChild(tr);
+        });
+    } else {
+        insCard.style.display = 'none';
     }
 }
 
