@@ -579,6 +579,17 @@ async function fetchFundamentals(symbol) {
             console.warn(`[NEWS FETCH FAILED] ${newsErr.message}`);
         }
 
+        // Fetch Peers (Recommendations)
+        let peers = [];
+        try {
+            const recommendations = await yahooFinance.recommendationsBySymbol(query);
+            if (recommendations && recommendations.recommendedSymbols) {
+                peers = recommendations.recommendedSymbols.slice(0, 5).map(p => p.symbol);
+            }
+        } catch (peerErr) {
+            console.warn(`[PEERS FETCH FAILED] ${peerErr.message}`);
+        }
+
         // Structured extraction for easier handling
         const summary = result.summaryDetail || {};
         const stats = result.defaultKeyStatistics || {};
@@ -641,7 +652,9 @@ async function fetchFundamentals(symbol) {
             },
             earnings: result.earningsHistory || {},
             insiderTransactions: result.insiderTransactions || {},
+            peers: peers,
             quarterly: result.earnings && result.earnings.financialsChart ? result.earnings.financialsChart.quarterly : [],
+            yearly: result.earnings && result.earnings.financialsChart ? result.earnings.financialsChart.yearly : [],
             target: {
                 mean: fin.targetMeanPrice,
                 median: fin.targetMedianPrice,

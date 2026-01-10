@@ -32,6 +32,22 @@ tabBtns.forEach(btn => {
 
         if (tg) tg.HapticFeedback.impactOccurred('light');
     });
+
+    // Toggle Kinerja (Quarterly vs Annual)
+    const btnQ = document.getElementById('btn-show-quarterly');
+    const btnY = document.getElementById('btn-show-yearly');
+    if (btnQ && btnY) {
+        btnQ.onclick = () => {
+            btnQ.classList.add('active');
+            btnY.classList.remove('active');
+            renderPerformanceTable(window.fundamentalData, 'quarterly');
+        };
+        btnY.onclick = () => {
+            btnY.classList.add('active');
+            btnQ.classList.remove('active');
+            renderPerformanceTable(window.fundamentalData, 'yearly');
+        };
+    }
 });
 
 // Utilities
@@ -177,11 +193,11 @@ function renderData(data) {
     document.getElementById('own-inst').innerText = fmtPct(data.holders.institutionsHoldersPercent);
     document.getElementById('own-count').innerText = fmtNum(data.holders.institutionsCount);
 
-    // Quarterly Rendering
-    renderQuarterly(data);
+    // Performance Rendering (Default: Quarterly)
+    renderPerformanceTable(data, 'quarterly');
 
-    // Whales Rendering
-    renderWhales(data);
+    // Peers Rendering
+    renderPeers(data);
 
     // Advanced Data
     renderInsights(data);
@@ -190,24 +206,27 @@ function renderData(data) {
 }
 
 /**
- * Render Quarterly Table & Mini Charts
+ * Render Performance Table (Switchable between Quarterly/Yearly)
  */
-function renderQuarterly(data) {
+function renderPerformanceTable(data, type = 'quarterly') {
     const qBody = document.getElementById('quarterly-body');
-    if (!qBody) return;
+    if (!qBody || !data) return;
 
     qBody.innerHTML = '';
-    if (data.quarterly && data.quarterly.length > 0) {
-        // Find max revenue for scaling bars
-        const maxRev = Math.max(...data.quarterly.map(q => q.revenue || 0));
+    const items = type === 'yearly' ? data.yearly : data.quarterly;
 
-        data.quarterly.forEach(q => {
+    if (items && items.length > 0) {
+        // Find max revenue for scaling bars
+        const maxRev = Math.max(...items.map(q => q.revenue || 0));
+
+        items.forEach(q => {
             const tr = document.createElement('tr');
             const revPct = maxRev > 0 ? (q.revenue / maxRev * 100) : 0;
+            const dateStr = q.date || q.fiscalQuarter || '-';
 
             tr.innerHTML = `
                 <td class="label-col">
-                    <div style="color: var(--accent-primary); font-weight: 700;">${q.date || q.fiscalQuarter}</div>
+                    <div style="color: var(--accent-primary); font-weight: 700;">${dateStr}</div>
                     <div class="bar-container" style="height: 6px; margin-top: 4px; background: rgba(255,255,255,0.05);">
                         <div class="bar-fill" style="width: ${revPct}%;"></div>
                     </div>
@@ -218,7 +237,7 @@ function renderQuarterly(data) {
             qBody.appendChild(tr);
         });
     } else {
-        qBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; opacity: 0.5;">Data kuartalan tidak tersedia.</td></tr>';
+        qBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px; opacity: 0.5;">Data ${type} tidak tersedia.</td></tr>`;
     }
 }
 
@@ -426,6 +445,45 @@ function colorizeGrowth(val) {
     return `<span class="tag ${colorClass}"><i class="fa-solid ${icon}"></i> ${num}%</span>`;
 }
 
+/**
+ * Render Peers (Competitors)
+ */
+function renderPeers(data) {
+    const container = document.getElementById('peers-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (data.peers && data.peers.length > 0) {
+        data.peers.forEach(symbol => {
+            const div = document.createElement('div');
+            div.className = 'news-item';
+            div.style.cursor = 'pointer';
+            div.style.padding = '15px';
+            div.onclick = () => {
+                const searchInput = document.getElementById('symbol-search');
+                if (searchInput) {
+                    searchInput.value = symbol;
+                    loadFundamentalData(symbol);
+                }
+            };
+
+            div.innerHTML = `
+                <div class="news-content" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="news-title" style="color: var(--accent-primary); border: none; font-size: 1rem; font-weight: 700;">${symbol}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Klik untuk analisa mendalam</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="opacity: 0.5;"></i>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    } else {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.5;">Data kompetitor tidak ditemukan.</div>';
+    }
+}
+
 // Search Handler
 symbolSearch.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -443,6 +501,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const symbol = urlParams.get('symbol') || 'BBCA';
     loadFundamentalData(symbol);
+
+    // Toggle Kinerja (Quarterly vs Annual)
+    const btnQ = document.getElementById('btn-show-quarterly');
+    const btnY = document.getElementById('btn-show-yearly');
+    if (btnQ && btnY) {
+        btnQ.onclick = () => {
+            btnQ.classList.add('active');
+            btnY.classList.remove('active');
+            renderPerformanceTable(window.fundamentalData, 'quarterly');
+        };
+        btnY.onclick = () => {
+            btnY.classList.add('active');
+            btnQ.classList.remove('active');
+            renderPerformanceTable(window.fundamentalData, 'yearly');
+        };
+    }
 
     if (tg) {
         tg.expand();

@@ -645,7 +645,8 @@
             <button class="tab-btn active" data-tab="profile">PROFIL</button>
             <button class="tab-btn" data-tab="valuation">VALUASI</button>
             <button class="tab-btn" data-tab="growth">PERTUMBUHAN</button>
-            <button class="tab-btn" data-tab="quarterly">QUARTERLY</button>
+            <button class="tab-btn" data-tab="quarterly">KINERJA</button>
+            <button class="tab-btn" data-tab="peers">PEERS</button>
             <button class="tab-btn" data-tab="insights">INSIGHTS</button>
             <button class="tab-btn" data-tab="info">INFO</button>
             <button class="tab-btn" data-tab="cashflow">CASH FLOW</button>
@@ -857,10 +858,20 @@
             </div>
         </div>
 
-        <!-- --- Tab: Quarterly --- -->
+        <!-- --- Tab: Kinerja (Quarterly/Annual) --- -->
         <div id="quarterly" class="tab-content">
             <div class="glass-card">
-                <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Kinerja Kuartalan (4 Terakhir)</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 class="card-title" style="margin-bottom: 0;"><i class="fa-solid fa-clock-rotate-left"></i>
+                        Histori Kinerja</h3>
+                    <div class="toggle-group"
+                        style="display: flex; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 4px;">
+                        <button id="btn-show-quarterly" class="tab-btn active"
+                            style="padding: 6px 12px; font-size: 0.75rem; border: none; box-shadow: none;">QUARTERLY</button>
+                        <button id="btn-show-yearly" class="tab-btn"
+                            style="padding: 6px 12px; font-size: 0.75rem; border: none; box-shadow: none;">ANNUAL</button>
+                    </div>
+                </div>
                 <div class="data-table-container">
                     <table id="quarterly-table">
                         <thead>
@@ -978,6 +989,19 @@
                 <div id="news-container" class="news-list">
                     <!-- News items will be injected here -->
                     <div class="loading-inline">Fetching latest news...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- --- Tab: Peers --- -->
+        <div id="peers" class="tab-content">
+            <div class="glass-card">
+                <h3 class="card-title"><i class="fa-solid fa-layer-group"></i> Perbandingan Kompetitor (Peers)</h3>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;">Saham-saham di industri
+                    yang sama berdasarkan algoritma Yahoo Finance.</p>
+                <div id="peers-container" class="news-list">
+                    <!-- Peer items injected here -->
+                    <div style="padding: 20px; text-align: center; opacity: 0.5;">Memuat kompetitor...</div>
                 </div>
             </div>
         </div>
