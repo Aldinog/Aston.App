@@ -74,7 +74,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
 
     let result = '';
 
-    const actionsWithoutSymbol = ['sectors', 'sector-emitents'];
+    const actionsWithoutSymbol = ['sectors', 'sector-emitents', 'discovery'];
     if (!symbol && !actionsWithoutSymbol.includes(action)) {
         return res.status(400).json({ error: 'Symbol is required' });
     }

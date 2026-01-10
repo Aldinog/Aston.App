@@ -511,7 +511,7 @@ async function loadRadarData() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${sessionStorage.getItem('jwt_token')}`
+                'Authorization': `Bearer ${localStorage.getItem('aston_session_token')}`
             },
             body: JSON.stringify({ action: 'discovery' })
         });
