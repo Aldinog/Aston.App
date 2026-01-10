@@ -39,7 +39,7 @@ async function generateSignal(symbol) {
 
         const prompt = `
 Role: Anda adalah AI Trading Assistant berpengalaman (Certified Technical Analyst).
-Tugas: Analisa data berikut dan berikan SIGNAL TRADING yang actionable.
+Tugas: Analisa data berikut dan berikan SIGNAL TRADING untuk saham IDX yang actionable.
 
 Data Saham: ${symbol}
 Harga Terakhir: ${latest.latestClose}
@@ -60,10 +60,10 @@ Instruksi Output:
 Berikan output dalam format yang bersih dan tegas (Markdown/HTML friendly).
 Struktur Wajib:
 
-1. **KEPUTUSAN**: [BUY / SELL / WAIT] 
+1. **KEPUTUSAN**: [BUY / WAIT] 
    (Pilih satu yang paling kuat berdasarkan data)
 
-2. **SETUP TRADING** (Jika Buy/Sell):
+2. **SETUP TRADING** (Jika Buy):
    - **Entry Area**: [Range Harga]
    - **Stop Loss**: [Harga] (Wajib < entry untuk Buy)
    - **Take Profit 1**: [Harga] (RR min 1:1)

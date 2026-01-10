@@ -72,6 +72,45 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
         }
     }
 
+    // --- AI CACHE HELPERS ---
+    async function getAICache(symbol, type) {
+        try {
+            const { data, error } = await supabase
+                .from('ai_cache')
+                .select('content, last_updated')
+                .eq('symbol', symbol)
+                .eq('type', type)
+                .single();
+
+            if (error || !data) return null;
+
+            const lastUpdate = new Date(data.last_updated);
+            const now = new Date();
+            const ageMinutes = (now - lastUpdate) / (1000 * 60);
+
+            if (ageMinutes < 15) {
+                console.log(`[AI CACHE HIT] ${symbol} ${type} (${Math.round(ageMinutes)} min old)`);
+                return data.content;
+            }
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async function saveAICache(symbol, type, content) {
+        try {
+            await supabase.from('ai_cache').upsert({
+                symbol,
+                type,
+                content,
+                last_updated: new Date().toISOString()
+            }, { onConflict: 'symbol, type' });
+        } catch (e) {
+            console.error('[AI CACHE SAVE FAILED]', e.message);
+        }
+    }
+
     let result = '';
 
     const actionsWithoutSymbol = ['sectors', 'sector-emitents', 'discovery'];
@@ -132,6 +171,12 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 }
             }
 
+            // --- CACHE CHECK ---
+            const cachedAnalysis = await getAICache(targetAnalysisSym, 'analysis');
+            if (cachedAnalysis) {
+                return res.status(200).json({ success: true, data: cachedAnalysis });
+            }
+
             const candles = await getPersistentCandles(targetAnalysisSym, '1d', 50);
             if (!candles || candles.length === 0) {
                 result = `❌ Data ${targetAnalysisSym} tidak tersedia (Candles Null).`;
@@ -139,6 +184,10 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 const indicators = computeIndicators(candles);
                 const prompt = formatIndicatorsForPrompt(targetAnalysisSym, indicators);
                 result = await analyzeWithAI(prompt);
+                // Save to cache
+                if (result && !result.includes('❌')) {
+                    await saveAICache(targetAnalysisSym, 'analysis', result);
+                }
             }
             break;
 
@@ -217,8 +266,18 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 }
             }
 
+            // --- CACHE CHECK ---
+            const cachedSignal = await getAICache(symbol, 'signal');
+            if (cachedSignal) {
+                return res.status(200).json({ success: true, data: cachedSignal });
+            }
+
             const { generateSignal } = await import('../../src/utils/signal.js');
             result = await generateSignal(symbol);
+            // Save to cache
+            if (result && !result.includes('❌')) {
+                await saveAICache(symbol, 'signal', result);
+            }
             break;
 
         case 'review':
