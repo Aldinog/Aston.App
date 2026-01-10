@@ -484,7 +484,8 @@ module.exports = {
     formatFundamentals,
     fetchProfile,
     formatProfile,
-    fetchSectors
+    fetchSectors,
+    fetchDiscoveryData
 };
 
 async function fetchQuote(symbol) {
@@ -723,4 +724,61 @@ function formatFundamentals(data) {
 
     // Fallback for old data structure if any
     return "❌ Format data tidak valid.";
+}
+
+/**
+ * Fetch discovery data (Trending Global + IDX Leaders)
+ */
+async function fetchDiscoveryData() {
+    const results = {
+        trending: [],
+        idxLeaders: [],
+        gainers: []
+    };
+
+    try {
+        // 1. Trending Global (US)
+        const trendingRes = await withRetry(() => yahooFinance.trendingSymbols('US'));
+        if (trendingRes && trendingRes.quotes) {
+            results.trending = trendingRes.quotes.slice(0, 5).map(q => ({
+                symbol: q.symbol,
+                name: q.symbol // Trending symbols endpoint usually only has symbol
+            }));
+        }
+    } catch (e) {
+        console.warn('[DISCOVERY] Trending US Fetch Failed:', e.message);
+    }
+
+    try {
+        // 2. IDX Market Leaders (Fixed Set for performance/reliability)
+        const leaders = ['BBCA.JK', 'BBRI.JK', 'TLKM.JK', 'ASII.JK', 'GOTO.JK', 'BMRI.JK', 'AMRT.JK', 'UNVR.JK', 'BBNI.JK', 'ADRO.JK'];
+        const { fetchQuote } = module.exports; // Access exported fetchQuote
+        const quotesDict = await fetchQuote(leaders);
+        if (quotesDict) {
+            results.idxLeaders = Object.values(quotesDict).map(q => ({
+                symbol: q.symbol,
+                name: q.shortName || q.longName || q.symbol,
+                price: q.regularMarketPrice,
+                change: q.regularMarketChangePercent
+            })).sort((a, b) => b.change - a.change);
+        }
+    } catch (e) {
+        console.warn('[DISCOVERY] IDX Leaders Fetch Failed:', e.message);
+    }
+
+    try {
+        // 3. Day Gainers (Global/US - Screener works best here)
+        const gainersRes = await withRetry(() => yahooFinance.screener({ scrIds: 'day_gainers', count: 5 }));
+        if (gainersRes && gainersRes.quotes) {
+            results.gainers = gainersRes.quotes.map(q => ({
+                symbol: q.symbol,
+                name: q.shortName || q.longName || q.symbol,
+                change: q.regularMarketChangePercent
+            }));
+        }
+    } catch (e) {
+        console.warn('[DISCOVERY] Gainers Fetch Failed:', e.message);
+    }
+
+    return results;
 }

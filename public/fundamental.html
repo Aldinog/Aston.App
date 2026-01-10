@@ -647,6 +647,8 @@
             <button class="tab-btn" data-tab="growth">PERTUMBUHAN</button>
             <button class="tab-btn" data-tab="quarterly">KINERJA</button>
             <button class="tab-btn" data-tab="peers">PEERS</button>
+            <button class="tab-btn" data-tab="radar" style="color: var(--accent-primary);"><i
+                    class="fa-solid fa-tower-broadcast"></i> RADAR</button>
             <button class="tab-btn" data-tab="insights">INSIGHTS</button>
             <button class="tab-btn" data-tab="info">INFO</button>
             <button class="tab-btn" data-tab="cashflow">CASH FLOW</button>
@@ -998,11 +1000,54 @@
             <div class="glass-card">
                 <h3 class="card-title"><i class="fa-solid fa-layer-group"></i> Perbandingan Kompetitor (Peers)</h3>
                 <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;">Saham-saham di industri
-                    yang sama berdasarkan algoritma Yahoo Finance.</p>
+                    yang sama berdasarkan algoritma.</p>
                 <div id="peers-container" class="news-list">
                     <!-- Peer items injected here -->
                     <div style="padding: 20px; text-align: center; opacity: 0.5;">Memuat kompetitor...</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- --- Tab: Radar (Discovery) --- -->
+        <div id="radar" class="tab-content">
+            <div class="glass-card">
+                <h3 class="card-title"><i class="fa-solid fa-chart-line"></i> IDX Market Leaders (Leaders Board)</h3>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;">Monitor performa 10
+                    penggerak pasar utama (Big Caps) di IHSG secara real-time.</p>
+                <div class="data-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Emiten</th>
+                                <th>Harga</th>
+                                <th>Change %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="radar-idx-body">
+                            <!-- Injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="glass-card">
+                    <h3 class="card-title" style="font-size: 1rem;"><i class="fa-solid fa-fire"></i> Trending</h3>
+                    <div id="radar-trending" class="news-list" style="font-size: 0.8rem;">
+                        <!-- Injected -->
+                    </div>
+                </div>
+                <div class="glass-card">
+                    <h3 class="card-title" style="font-size: 1rem;"><i class="fa-solid fa-bolt"></i> Gainers</h3>
+                    <div id="radar-gainers" class="news-list" style="font-size: 0.8rem;">
+                        <!-- Injected -->
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 10px; text-align: center; opacity: 0.7;">
+                * Data Trending & Gainers berdasarkan bursa Global/US.
             </div>
         </div>
 

@@ -31,6 +31,10 @@ tabBtns.forEach(btn => {
         });
 
         if (tg) tg.HapticFeedback.impactOccurred('light');
+
+        if (tabId === 'radar') {
+            loadRadarData();
+        }
     });
 
     // Toggle Kinerja (Quarterly vs Annual)
@@ -481,6 +485,129 @@ function renderPeers(data) {
         });
     } else {
         container.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.5;">Data kompetitor tidak ditemukan.</div>';
+    }
+}
+
+let radarCache = null;
+let radarCacheTime = 0;
+
+/**
+ * Load Radar (Discovery) Data
+ */
+async function loadRadarData() {
+    const idxBody = document.getElementById('radar-idx-body');
+    if (!idxBody) return;
+
+    // Use Cache (5 min)
+    if (radarCache && (Date.now() - radarCacheTime < 5 * 60 * 1000)) {
+        renderRadar(radarCache);
+        return;
+    }
+
+    try {
+        idxBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px;">Memantau pasar...</td></tr>';
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('jwt_token')}`
+            },
+            body: JSON.stringify({ action: 'discovery' })
+        });
+
+        const res = await response.json();
+        if (res.success && res.data) {
+            radarCache = res.data;
+            radarCacheTime = Date.now();
+            renderRadar(res.data);
+        } else {
+            throw new Error(res.error || 'Failed');
+        }
+    } catch (e) {
+        console.error("Radar Error:", e);
+        idxBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--negative);">Gagal memuat Radar.</td></tr>';
+    }
+}
+
+/**
+ * Render Radar UI
+ */
+function renderRadar(data) {
+    const idxBody = document.getElementById('radar-idx-body');
+    const trendingList = document.getElementById('radar-trending');
+    const gainersList = document.getElementById('radar-gainers');
+
+    if (idxBody && data.idxLeaders) {
+        idxBody.innerHTML = '';
+        data.idxLeaders.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.onclick = () => {
+                const search = document.getElementById('symbol-search');
+                if (search) {
+                    search.value = item.symbol.split('.')[0];
+                    loadFundamentalData(item.symbol);
+                }
+            };
+            tr.innerHTML = `
+                <td class="label-col">
+                    <div style="font-weight: 700; color: var(--accent-primary);">${item.symbol.split('.')[0]}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;">${item.name}</div>
+                </td>
+                <td class="value-col">${fmtNum(item.price)}</td>
+                <td class="value-col">${colorizeGrowth(item.change / 100)}</td>
+            `;
+            idxBody.appendChild(tr);
+        });
+    }
+
+    if (trendingList && data.trending) {
+        trendingList.innerHTML = '';
+        data.trending.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'news-item';
+            div.style.padding = '8px 12px';
+            div.style.cursor = 'pointer';
+            div.onclick = () => {
+                const search = document.getElementById('symbol-search');
+                if (search) {
+                    search.value = item.symbol;
+                    loadFundamentalData(item.symbol);
+                }
+            };
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: var(--accent-primary);">${item.symbol}</span>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; opacity: 0.5;"></i>
+                </div>
+            `;
+            trendingList.appendChild(div);
+        });
+    }
+
+    if (gainersList && data.gainers) {
+        gainersList.innerHTML = '';
+        data.gainers.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'news-item';
+            div.style.padding = '8px 12px';
+            div.style.cursor = 'pointer';
+            div.onclick = () => {
+                const search = document.getElementById('symbol-search');
+                if (search) {
+                    search.value = item.symbol;
+                    loadFundamentalData(item.symbol);
+                }
+            };
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700;">${item.symbol}</span>
+                    <span style="color: var(--positive); font-weight: 600;">+${(item.change).toFixed(2)}%</span>
+                </div>
+            `;
+            gainersList.appendChild(div);
+        });
     }
 }
 

@@ -9,7 +9,8 @@ const {
     formatFundamentals,
     fetchProfile,
     formatProfile,
-    fetchSectors
+    fetchSectors,
+    fetchDiscoveryData
 } = require('../../src/utils/yahoofinance');
 const { getPersistentCandles } = require('../../src/utils/persistence');
 const { computeIndicators, formatIndicatorsForPrompt } = require('../../src/utils/indicators');
@@ -430,6 +431,18 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 data: sectors,
                 active_theme: activeTheme
             });
+
+        case 'discovery':
+            try {
+                const discoveryData = await fetchDiscoveryData();
+                return res.json({
+                    success: true,
+                    data: discoveryData
+                });
+            } catch (err) {
+                console.error('Discovery Error:', err);
+                return res.status(500).json({ error: 'Failed to fetch discovery data' });
+            }
     }
 
     if (!result) {
