@@ -17,6 +17,7 @@ const { computeIndicators, formatIndicatorsForPrompt } = require('../../src/util
 const { calculateAvg, formatAvgReport } = require('../../src/utils/avg');
 const { markdownToTelegramHTML } = require('../../src/utils/telegram');
 const { supabase } = require('../../src/utils/supabase');
+const moment = require('moment-timezone');
 
 // Cache for live quotes to prevent hitting Yahoo Finance too often
 const quoteCache = new Map();
@@ -84,16 +85,35 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
 
             if (error || !data) return null;
 
-            const lastUpdate = new Date(data.last_updated);
-            const now = new Date();
-            const ageMinutes = (now - lastUpdate) / (1000 * 60);
+            // --- DYNAMIC TTL LOGIC (Asia/Jakarta) ---
+            const now = moment().tz('Asia/Jakarta');
+            const lastUpdate = moment(data.last_updated).tz('Asia/Jakarta');
+            const ageMinutes = now.diff(lastUpdate, 'minutes');
 
-            if (ageMinutes < 15) {
-                console.log(`[AI CACHE HIT] ${symbol} ${type} (${Math.round(ageMinutes)} min old)`);
+            const day = now.day(); // 0 (Sun) - 6 (Sat)
+            const hour = now.hour();
+            const isWeekend = (day === 0 || day === 6);
+            const isMarketOpen = !isWeekend && (hour >= 9 && hour < 16);
+
+            let ttlMinutes = 15; // Default: Market Open
+            let statusLabel = "Market Open";
+
+            if (isWeekend) {
+                ttlMinutes = 12 * 60; // 12 Hours
+                statusLabel = "Weekend";
+            } else if (!isMarketOpen) {
+                ttlMinutes = 4 * 60; // 4 Hours
+                statusLabel = "Market Closed";
+            }
+
+            if (ageMinutes < ttlMinutes) {
+                console.log(`[AI CACHE HIT] ${symbol} ${type} (${statusLabel}, ${ageMinutes}m/${ttlMinutes}m)`);
                 return data.content;
             }
+            console.log(`[AI CACHE EXPIRED] ${symbol} ${type} (${statusLabel}, ${ageMinutes}m/${ttlMinutes}m)`);
             return null;
         } catch (e) {
+            console.error('[AI CACHE ERROR]', e.message);
             return null;
         }
     }
