@@ -1,13 +1,22 @@
 const { supabase } = require('../../src/utils/supabase');
 
 // Helper: Check event status
+// Helper: Check event status
 async function getEventStatus() {
     const { data } = await supabase
         .from('app_settings')
         .select('value')
         .eq('key', 'event_status')
         .single();
-    return data ? data.value : 'open'; // Default open
+
+    if (!data || !data.value) return 'open';
+
+    // Normalize: Remove extra quotes if stored as '"open"' string
+    let status = data.value;
+    if (typeof status === 'string') {
+        status = status.replace(/^"|"$/g, '');
+    }
+    return status;
 }
 
 // 1. Register Participant
@@ -22,7 +31,10 @@ exports.registerParticipant = async (req, res) => {
 
         // Check Event Status
         const status = await getEventStatus();
-        if (status === 'closed' || status === 'announcement') {
+        console.log(`[REGISTRATION CHECK] Status from DB: ${status} (Type: ${typeof status})`);
+
+        if (status === 'closed' || status === 'announcement' || status === 'off') {
+            console.log('[REGISTRATION BLOCKED] Event is closed.');
             return res.status(400).json({ error: 'Pendaftaran event sudah ditutup.' });
         }
 
@@ -104,9 +116,14 @@ exports.adminControl = async (req, res) => {
 
         if (action === 'set_status') {
             // payload: { status: 'open' | 'closed' | 'announcement' }
+            // Store as JSON string to be safe with JSONB, but helper will clean it.
             await supabase
                 .from('app_settings')
                 .upsert({ key: 'event_status', value: JSON.stringify(payload.status) });
+
+            // Log for debug
+            console.log(`[EVENT STATUS] Set to ${payload.status}`);
+
             return res.json({ success: true, message: `Status updated to ${payload.status}` });
         }
 

@@ -34,10 +34,15 @@ const verifyToken = (req, res, next) => {
 
 const verifyAdmin = (req, res, next) => {
     const adminId = process.env.ADMIN_ID;
-    if (String(req.user?.telegram_user_id) === String(adminId)) {
+    const userId = req.user?.telegram_user_id || req.user?.id || req.user?.telegram_id; // Try all possible keys
+
+    console.log(`[AUTH DEBUG] Token Payload:`, JSON.stringify(req.user)); // Debug payload
+    console.log(`[AUTH DEBUG] Admin Check: User ${userId} vs AdminEnv ${adminId}`);
+
+    if (String(userId) === String(adminId)) {
         next();
     } else {
-        console.error(`[ADMIN AUTH FAIL] User: ${req.user?.telegram_user_id} vs Admin: ${adminId}`);
+        console.error(`[ADMIN AUTH FAIL] User: ${userId} vs Admin: ${adminId}`);
         return res.status(403).json({ error: 'Admin only' });
     }
 };
