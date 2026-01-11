@@ -24,7 +24,7 @@
     </style>
 </head>
 
-<body class="dark-theme">
+<body class="dark-theme" style="color: #ffffff;">
     <div class="container">
         <header class="app-header">
             <a href="admin.html" class="back-btn">Back to Dashboard</a>
@@ -79,7 +79,7 @@
     <script>
         // Admin Logic
         const API_ADMIN = '/api/event/control';
-        const token = localStorage.getItem('auth_token'); // Admin must be logged in
+        const token = localStorage.getItem('aston_session_token'); // Admin must be logged in
 
         async function refreshStats() {
             const res = await fetch('/api/event/participants');

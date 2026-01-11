@@ -10,7 +10,7 @@ function getToken() {
     // Let's assume `window.Telegram.WebApp.initData` is used or we reuse `script.js` auth logic.
     // For now, let's try to find where token is stored.
     // If not found, we might need to prompt user or use the existing `authToken` variable if exposed.
-    return localStorage.getItem('auth_token') || '';
+    return localStorage.getItem('aston_session_token') || '';
 }
 
 // 1. Check Status & Redirect

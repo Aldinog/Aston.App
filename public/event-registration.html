@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aston Trading Event - Registration</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         /* Extra styles for Event */
@@ -18,15 +21,28 @@
             position: relative;
             overflow: hidden;
         }
+
         .hero-banner::before {
             content: '';
             position: absolute;
-            top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 10%, transparent 60%);
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 10%, transparent 60%);
             animation: rotate 20s linear infinite;
         }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .hero-title {
             font-family: var(--font-heading);
             font-size: 1.8rem;
@@ -37,6 +53,7 @@
             margin-bottom: 8px;
             position: relative;
         }
+
         .hero-subtitle {
             color: var(--text-secondary);
             font-size: 0.9rem;
@@ -44,9 +61,10 @@
         }
     </style>
 </head>
-<body class="dark-theme">
+
+<body class="dark-theme" style="color: #ffffff;">
     <div class="ambient-glow"></div>
-    
+
     <div class="container">
         <!-- Header -->
         <header class="app-header">
@@ -69,18 +87,18 @@
         <!-- Registration Form -->
         <div class="glass-card input-card">
             <h2 style="color:white; margin-bottom:20px; font-family:var(--font-heading);">Formulir Pendaftaran</h2>
-            
+
             <form id="reg-form">
                 <div class="input-wrapper">
                     <label>Nama Lengkap</label>
                     <input type="text" id="full_name" placeholder="Sesuai KTP (Privasi Aman)" required>
                 </div>
-                
+
                 <div class="input-wrapper">
                     <label>Username Telegram</label>
                     <input type="text" id="telegram_username" placeholder="@username" required>
                 </div>
-                
+
                 <div class="grid-actions" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px;">
                     <div class="input-wrapper" style="margin-bottom:0;">
                         <label>Kota</label>
@@ -92,10 +110,12 @@
                     </div>
                 </div>
 
-                <div class="info-card" style="margin-top:0; margin-bottom:20px; text-align:left; border:1px solid rgba(255,255,255,0.05); padding:15px; border-radius:12px;">
+                <div class="info-card"
+                    style="margin-top:0; margin-bottom:20px; text-align:left; border:1px solid rgba(255,255,255,0.05); padding:15px; border-radius:12px;">
                     <p style="font-size:0.75rem; line-height:1.5;">
                         <strong style="color:#f59e0b">PENTING:</strong><br>
-                        Pastikan Username Telegram benar agar kami bisa menghubungi pemenang. Data pribadi tidak akan dipublikasikan.
+                        Pastikan Username Telegram benar agar kami bisa menghubungi pemenang. Data pribadi tidak akan
+                        dipublikasikan.
                     </p>
                 </div>
 
@@ -106,7 +126,8 @@
         </div>
 
         <div style="text-align:center; margin-top:20px;">
-            <a href="event-participants.html" style="color:var(--text-secondary); text-decoration:none; font-size:0.85rem;">
+            <a href="event-participants.html"
+                style="color:var(--text-secondary); text-decoration:none; font-size:0.85rem;">
                 Lihat Peserta Terdaftar &rarr;
             </a>
         </div>
@@ -117,17 +138,17 @@
         // Init Logic
         document.addEventListener('DOMContentLoaded', async () => {
             await checkEventStatus('event-registration.html');
-            
+
             // Auto-fill username if available from Telegram WebApp
             // Mocking for now or implementation detail
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-            if(tgUser && tgUser.username) {
+            if (tgUser && tgUser.username) {
                 document.getElementById('telegram_username').value = '@' + tgUser.username;
             }
 
             document.getElementById('reg-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 const btn = e.target.querySelector('button');
                 const originalText = btn.innerHTML;
                 btn.innerText = 'Processing...';
@@ -141,28 +162,29 @@
                     // We need to pass the ID. If not in token, pass here.
                     // Assuming we pass it from client context if not inferred by server.
                     // For security, server should infer. But let's pass it for now if needed.
-                    telegram_user_id: tgUser ? String(tgUser.id) : null 
+                    telegram_user_id: tgUser ? String(tgUser.id) : null
                 };
-                
+
                 // Fallback for non-telegram browser testing
                 if (!formData.telegram_user_id) {
                     // Try to get from localStorage (dev mode) or prompt
                     const devId = localStorage.getItem('dev_telegram_id');
-                    if(devId) formData.telegram_user_id = devId;
+                    if (devId) formData.telegram_user_id = devId;
                     else {
-                         // In production this must be strict. For now allow manual for testing if logic permits?
-                         // The Controller requires it.
-                         // Let's assume the user is logged in via the main app flow and we have the ID in token.
-                         // But our `event.js` client code didn't read token payload.
+                        // In production this must be strict. For now allow manual for testing if logic permits?
+                        // The Controller requires it.
+                        // Let's assume the user is logged in via the main app flow and we have the ID in token.
+                        // But our `event.js` client code didn't read token payload.
                     }
                 }
 
                 await submitRegistration(formData);
-                
+
                 btn.innerText = originalText;
                 btn.disabled = false;
             });
         });
     </script>
 </body>
+
 </html>
