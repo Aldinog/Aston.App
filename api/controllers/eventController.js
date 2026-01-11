@@ -106,7 +106,7 @@ exports.adminControl = async (req, res) => {
             // payload: { status: 'open' | 'closed' | 'announcement' }
             await supabase
                 .from('app_settings')
-                .upsert({ key: 'event_status', value: payload.status });
+                .upsert({ key: 'event_status', value: JSON.stringify(payload.status) });
             return res.json({ success: true, message: `Status updated to ${payload.status}` });
         }
 
@@ -131,7 +131,7 @@ exports.adminControl = async (req, res) => {
             // Auto switch to announcement
             await supabase
                 .from('app_settings')
-                .upsert({ key: 'event_status', value: 'announcement' });
+                .upsert({ key: 'event_status', value: JSON.stringify('announcement') });
 
             return res.json({ success: true, message: 'Pemenang diumumkan!' });
         }

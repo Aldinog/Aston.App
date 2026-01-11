@@ -117,14 +117,22 @@
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ action: 'set_winners', payload: { winners } })
                 });
-                const result = await res.json();
+                const text = await res.text();
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (err) {
+                    console.error('Server response:', text);
+                    throw new Error('Server returned invalid JSON: ' + text.substring(0, 50) + '...');
+                }
+
                 if (result.success) {
                     alert('Winners Published! Setup changed to "Announcement" mode.');
                     refreshStats();
                 } else {
                     alert('Error: ' + result.error);
                 }
-            } catch (e) { alert(e); }
+            } catch (e) { alert(e.message); }
         }
 
         async function downloadCSV() {
