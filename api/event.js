@@ -20,12 +20,10 @@ const verifyToken = (req, res, next) => {
 
         // Important: check if decoded has telegram_user_id. The login payload has it.
         // If not, we fetched it from DB in web.js. Here we simplify.
-        if (decoded.telegram_id) {
-            req.body.telegram_user_id = decoded.telegram_id;
+        if (decoded.telegram_user_id) {
+            req.body.telegram_user_id = decoded.telegram_user_id;
         } else if (decoded.userId) {
-            // If token has userId (UUID), we might need to fetch tg_id if not in token.
-            // For now assume token has it or client sends it and we trust it (less secure but ok for MVP if matching)
-            // Ideally: Fetch user from DB.
+            // ...
         }
 
         next();
@@ -35,19 +33,11 @@ const verifyToken = (req, res, next) => {
 };
 
 const verifyAdmin = (req, res, next) => {
-    // Simple Admin Check (Hardcoded ID or Env)
-    // Ensure verifyToken is called first
     const adminId = process.env.ADMIN_ID;
-    // We need to check if req.body.telegram_user_id matches admin, 
-    // OR if we fetched the user in verifyToken. 
-    // For this simplified router, let's rely on the client sending the ID and us knowing the secret.
-    // ACTUAL SECURE WAY:
-    // We already decoded the token.
-    // Let's assume req.user.telegram_id exists.
-
-    if (String(req.user?.telegram_id) === String(adminId)) {
+    if (String(req.user?.telegram_user_id) === String(adminId)) {
         next();
     } else {
+        console.error(`[ADMIN AUTH FAIL] User: ${req.user?.telegram_user_id} vs Admin: ${adminId}`);
         return res.status(403).json({ error: 'Admin only' });
     }
 };
