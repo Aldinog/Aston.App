@@ -10,77 +10,301 @@
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
+        :root {
+            --gold-light: #FFD700;
+            --gold-dark: #B8860B;
+            --purple-light: #A78BFA;
+            --purple-dark: #7C3AED;
+            --silver-light: #E5E7EB;
+            --silver-dark: #9CA3AF;
+        }
+
         body {
             overflow-x: hidden;
-            background-color: #0f172a;
-            /* Fallback */
+            background-color: #020617;
+            /* Very Dark Blue */
+            /* Parallax Stars Background */
+            background-image:
+                radial-gradient(1px 1px at 10% 10%, white, transparent),
+                radial-gradient(1px 1px at 20% 20%, white, transparent),
+                radial-gradient(2px 2px at 30% 30%, white, transparent),
+                radial-gradient(1px 1px at 40% 40%, white, transparent);
+            background-size: 550px 550px;
+            animation: starsMove 60s linear infinite;
+        }
+
+        @keyframes starsMove {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 0 550px;
+            }
+        }
+
+        /* Ambient Orbs */
+        .ambient-orb {
+            position: fixed;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        /* Header Styles */
+        .page-header {
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 2.8rem;
+            line-height: 1.1;
+            background: linear-gradient(180deg, #FFFFFF, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.5));
+            animation: textShine 4s ease-in-out infinite;
+        }
+
+        /* Winner Cards */
+        .winners-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 40px;
         }
 
         .winner-card {
             position: relative;
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 12px;
+            padding: 24px;
+            border-radius: 20px;
             text-align: center;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            transition: transform 0.3s ease;
-            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .winner-card:active {
+            transform: scale(0.98);
+        }
+
+        .winner-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            padding: 1.5px;
+            /* Border width */
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* Rank 1: The Champion */
+        .rank-1 {
+            background: radial-gradient(circle at top, rgba(255, 215, 0, 0.25), rgba(0, 0, 0, 0.4) 80%);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            margin-bottom: 20px;
+            transform: scale(1.02);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1);
+            animation: glowPulse 3s infinite;
+        }
+
+        .rank-1 .crown-3d {
+            font-size: 4rem;
+            margin-bottom: -15px;
+            margin-top: -30px;
+            filter: drop-shadow(0 5px 15px rgba(255, 215, 0, 0.6));
+            animation: floatCrown 3s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        .rank-1 .winner-name {
+            font-size: 1.8rem;
+            color: #FFD700;
+            background: linear-gradient(90deg, #fff, #FFD700, #F59E0B, #fff);
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmerText 3s linear infinite;
+        }
+
+        /* Rank 2 & 3: Purple Prestige */
+        .rank-2,
+        .rank-3 {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(124, 58, 237, 0.05));
+            border: 1px solid rgba(167, 139, 250, 0.4);
+        }
+
+        .rank-2 .winner-name,
+        .rank-3 .winner-name {
+            font-size: 1.5rem;
+            color: #C4B5FD;
+            text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+        }
+
+        /* Rank 4 & 5: Silver Sleek */
+        .rank-4,
+        .rank-5 {
+            background: linear-gradient(135deg, rgba(209, 213, 219, 0.1), rgba(156, 163, 175, 0.05));
+            border: 1px solid rgba(209, 213, 219, 0.3);
+            min-height: 100px;
+            padding: 16px;
+        }
+
+        .rank-4 .winner-name,
+        .rank-5 .winner-name {
+            font-size: 1.2rem;
+            color: #E5E7EB;
         }
 
         .winner-name {
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
+            letter-spacing: 0.5px;
+            margin: 5px 0;
+            z-index: 1;
+        }
+
+        .rank-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        /* Reward Card */
+        .reward-section {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reward-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #FFD700, #A78BFA, #FFD700);
+            background-size: 200%;
+            animation: shimmerText 3s linear infinite;
+        }
+
+        .reward-title {
+            font-family: 'Space Grotesk';
             color: #fff;
-            margin-top: 8px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        }
-
-        /* Rank 1: Gold + Crown + Glow */
-        .rank-1 {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(251, 191, 36, 0.4));
-            border: 1px solid rgba(255, 215, 0, 0.6);
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1);
-            transform: scale(1.05);
+            text-align: center;
+            font-size: 1.2rem;
             margin-bottom: 25px;
-            padding: 30px 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
-        .rank-1 .rank-badge {
-            font-size: 3rem;
-            color: #FFD700;
+        .prize-hero {
+            text-align: center;
+            margin-bottom: 25px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+            padding: 20px;
+            border-radius: 50%;
         }
 
-        .rank-2 .rank-badge {
-            font-size: 2.5rem;
-            color: #C0C0C0;
-        }
-
-        .rank-3 .rank-badge {
+        .big-money {
+            font-family: 'Space Grotesk';
             font-size: 2.2rem;
-            color: #CD7F32;
+            font-weight: 800;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            line-height: 1;
         }
 
-        @keyframes popIn {
+        .prize-sub {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 5px;
+        }
+
+        /* Animation Keyframes */
+        @keyframes floatCrown {
+            0% {
+                transform: translateY(0) rotate(0);
+            }
+
+            50% {
+                transform: translateY(-15px) rotate(5deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(0);
+            }
+        }
+
+        @keyframes shimmerText {
+            0% {
+                background-position: 0 center;
+            }
+
+            100% {
+                background-position: 200% center;
+            }
+        }
+
+        @keyframes glowPulse {
+            0% {
+                box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 50px rgba(255, 215, 0, 0.6), inset 0 0 30px rgba(255, 215, 0, 0.2);
+            }
+
+            100% {
+                box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            }
+        }
+
+        @keyframes popUp {
             from {
                 opacity: 0;
-                transform: scale(0.5);
+                transform: translateY(40px) scale(0.9);
             }
 
             to {
                 opacity: 1;
-                transform: scale(1);
+                transform: translateY(0) scale(1);
             }
         }
 
-        /* Simple Confetti CSS */
+        /* Confetti */
         .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #f00;
+            position: fixed;
+            width: 8px;
+            height: 14px;
+            top: -20px;
+            z-index: 50;
             animation: fall linear forwards;
-            top: -10vh;
         }
 
         @keyframes fall {
@@ -91,57 +315,57 @@
     </style>
 </head>
 
-<body class="dark-theme" style="color: #ffffff;">
-    <div class="ambient-glow"
-        style="background: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.15), var(--bg-dark) 70%);"></div>
+<body style="color: #ffffff;">
+    <div class="ambient-orb" style="top: -10%; left: -10%; width: 50vw; height: 50vw; background: #7C3AED;"></div>
+    <div class="ambient-orb" style="bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: #B8860B;"></div>
 
     <div class="container" style="z-index: 10;">
-        <div style="text-align: center; margin-top: 40px; margin-bottom: 30px;">
-            <h1
-                style="font-family:'Space Grotesk'; font-size: 2.5rem; background: linear-gradient(to bottom, #fff, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                CONGRATULATIONS</h1>
-            <p style="color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase;">The Champions of
-                Trading Event</p>
+        <div class="page-header">
+            <h1 class="header-title">CHAMPIONS</h1>
+            <p style="color: rgba(255,255,255,0.6); letter-spacing: 3px; font-size: 0.8rem; margin-top: 8px;">ASTON
+                TRADING EVENT</p>
         </div>
 
-        <div id="winners-list" style="display: flex; flex-direction: column; gap: 16px;">
-            <!-- Winners injected here -->
-            <div style="text-align:center; padding:50px;">
+        <div id="winners-list" class="winners-container">
+            <!-- Loading -->
+            <div style="text-align:center; padding:50px; opacity:0.5;">
                 <div class="spinner"></div>
             </div>
         </div>
 
-        <!-- PRIZES SECTION -->
-        <div class="winner-card"
-            style="margin-top: 30px; padding: 25px; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);">
-            <h3
-                style="color:#ffffff; font-family:'Space Grotesk'; margin-bottom:15px; text-transform:uppercase; letter-spacing:1px;">
-                🎁 Exclusive Rewards</h3>
+        <!-- PRIZES SECTION REDESIGN -->
+        <div class="reward-section">
+            <h3 class="reward-title">🎁 Exclusive Rewards</h3>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="prize-hero">
+                <div style="font-size: 3rem; margin-bottom: 5px;">💰</div>
+                <div class="big-money">Rp 1.500.000</div>
+                <div class="prize-sub">Total Cash Prize Pool</div>
+            </div>
+
+            <div style="display:flex; justify-content:center; gap:20px;">
                 <div
-                    style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.3);">
-                    <div style="font-size:2rem; margin-bottom:5px;">💰</div>
-                    <div style="font-size:0.8rem; color:#aaa; text-transform:uppercase;">Total Cash Prize</div>
-                    <div style="font-size:1.2rem; font-weight:800; color:#fbbf24;">Rp 1.500.000</div>
+                    style="text-align:center; background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; border:1px solid rgba(167,139,250,0.3); flex:1;">
+                    <div style="font-size:1.8rem; margin-bottom:5px;">🧢</div>
+                    <div style="font-size:0.9rem; font-weight:700; color:#A78BFA;">Premium Cap</div>
                 </div>
-
                 <div
-                    style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; border:1px solid rgba(139, 92, 246, 0.3);">
-                    <div style="font-size:2rem; margin-bottom:5px;">🧢</div>
-                    <div style="font-size:0.8rem; color:#aaa; text-transform:uppercase;">Merchandise</div>
-                    <div style="font-size:1.2rem; font-weight:800; color:#a78bfa;">Exclusive Aston</div>
+                    style="text-align:center; background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; border:1px solid rgba(167,139,250,0.3); flex:1;">
+                    <div style="font-size:1.8rem; margin-bottom:5px;">👕</div>
+                    <div style="font-size:0.9rem; font-weight:700; color:#A78BFA;">Aston Hoodie</div>
                 </div>
             </div>
 
-            <p style="margin-top:15px; font-size:0.85rem; color:rgba(255,255,255,0.6);">
-                *Winners will be contacted via Telegram for prize distribution.
+            <p style="text-align:center; margin-top:20px; font-size:0.75rem; color:rgba(255,255,255,0.4);">
+                *Winners will be contacted personally via Telegram
             </p>
         </div>
 
-        <div style="text-align:center; margin-top:40px;">
+        <div style="text-align:center; margin-top:50px; margin-bottom: 20px;">
             <a href="index.html" class="glass-btn"
-                style="display:inline-block; padding:12px 24px; color:white; text-decoration:none;">Back to Home</a>
+                style="padding:12px 30px; border-radius:30px; background:rgba(255,255,255,0.1); backdrop-filter:blur(5px); color:white; text-decoration:none; font-size:0.9rem; border:1px solid rgba(255,255,255,0.2);">
+                Back to Dashboard
+            </a>
         </div>
     </div>
 
@@ -149,14 +373,14 @@
     <script src="js/event.js"></script>
     <script>
         function createConfetti() {
-            const colors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#F472B6'];
-            for (let i = 0; i < 50; i++) {
+            const colors = ['#FFD700', '#FBBF24', '#8B5CF6', '#EC4899', '#ffffff'];
+            for (let i = 0; i < 80; i++) {
                 const el = document.createElement('div');
                 el.classList.add('confetti');
                 el.style.left = Math.random() * 100 + 'vw';
                 el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                el.style.animationDuration = (Math.random() * 3 + 2) + 's';
-                el.style.animationDelay = (Math.random() * 2) + 's';
+                el.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
+                el.style.animationDelay = (Math.random() * 3) + 's';
                 document.body.appendChild(el);
             }
         }
@@ -165,20 +389,12 @@
             try {
                 const res = await fetch('/api/event/participants');
                 const data = await res.json();
-
-                if (data.participants && data.status === 'open') {
-                    // Fallback if accessed directly but not announced
-                    window.location.href = 'event-registration.html';
-                    return;
-                }
-
                 const container = document.getElementById('winners-list');
                 container.innerHTML = '';
 
                 let winners = data.winners;
-
+                // Placeholders if no winners yet
                 if (!winners || winners.length === 0) {
-                    // Placeholder Winners for Layout Preview & Motivation
                     winners = [
                         { telegram_username: '@CalonSultan', win_rank: 1 },
                         { telegram_username: '@CalonJuara2', win_rank: 2 },
@@ -188,29 +404,32 @@
                     ];
                 }
 
-                if (winners && winners.length > 0) {
-                    winners.forEach((w, index) => {
-                        const rank = index + 1;
-                        const div = document.createElement('div');
-                        div.className = `winner-card rank-${rank}`;
-                        div.style.animationDelay = `${index * 0.15}s`;
+                winners.forEach((w, index) => {
+                    const rank = index + 1;
+                    const div = document.createElement('div');
+                    div.className = `winner-card rank-${rank}`;
+                    div.style.animation = `popUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards`;
+                    div.style.animationDelay = `${index * 0.15}s`;
 
-                        let crownHtml = '';
-                        if (rank === 1) crownHtml = '<div class="crown-icon">👑</div>';
+                    let iconHtml = '';
+                    let label = 'Top 5 Winner';
 
-                        div.innerHTML = `
-                            ${crownHtml}
-                            <div class="winner-name">${w.telegram_username}</div>
-                            <div style="font-size:0.7rem; opacity:0.7; letter-spacing:1px; margin-top:5px; text-transform:uppercase;">
-                                ${rank === 1 ? 'CHAMPION' : rank <= 3 ? 'Runner Up' : 'Top 5'}
-                            </div>
-                         `;
-                        container.appendChild(div);
-                    });
-                    createConfetti();
-                } else {
-                    container.innerHTML = '<div style="text-align:center; color:white;">Winners are being selected...</div>';
-                }
+                    if (rank === 1) {
+                        iconHtml = '<div class="crown-3d">👑</div>';
+                        label = 'THE CHAMPION';
+                    } else if (rank <= 3) {
+                        label = 'RUNNER UP';
+                    }
+
+                    div.innerHTML = `
+                        ${iconHtml}
+                        <div class="winner-name">${w.telegram_username}</div>
+                        <div class="rank-label" style="color:${rank === 1 ? '#FFD700' : (rank <= 3 ? '#C4B5FD' : '#9CA3AF')}">${label}</div>
+                    `;
+                    container.appendChild(div);
+                });
+
+                if (data.winners && data.winners.length > 0) createConfetti();
 
             } catch (e) { console.error(e); }
         }
