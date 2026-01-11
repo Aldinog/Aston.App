@@ -120,13 +120,41 @@ exports.adminControl = async (req, res) => {
 
             // 2. Set new winners
             const winners = payload.winners; // Array of usernames
+            let winnersFound = 0;
+            const notFound = [];
+
             for (let i = 0; i < winners.length; i++) {
-                const username = winners[i];
-                await supabase
+                let username = winners[i].trim();
+                if (!username) continue;
+                // Normalize: Ensure starts with @
+                if (!username.startsWith('@')) username = '@' + username;
+
+                // Try case-insensitive usage with text search filter or ilike
+                // Supabase JS ilike syntax: .ilike('column', 'pattern')
+                const { data } = await supabase
                     .from('event_participants')
                     .update({ is_winner: true, win_rank: i + 1 })
-                    .eq('telegram_username', username);
+                    .ilike('telegram_username', username)
+                    .select();
+
+                if (data && data.length > 0) {
+                    winnersFound++;
+                } else {
+                    notFound.push(username);
+                }
             }
+
+            // Auto switch to announcement
+            await supabase
+                .from('app_settings')
+                .upsert({ key: 'event_status', value: JSON.stringify('announcement') });
+
+            let msg = `Pemenang diumumkan! (${winnersFound} dari ${winners.length} ditemukan)`;
+            if (notFound.length > 0) {
+                msg += `. PERINGATAN: Username ini tidak terdaftar sebagai peserta: ${notFound.join(', ')}`;
+            }
+
+            return res.json({ success: true, message: msg });
 
             // Auto switch to announcement
             await supabase
