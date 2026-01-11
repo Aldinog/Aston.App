@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Event Participants - Aston Trading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .rule-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .rule-title {
+            color: var(--accent-blue);
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rule-list {
+            list-style: none;
+            padding: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .rule-list li {
+            margin-bottom: 8px;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .rule-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+        }
+
+        .participant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <div class="ambient-glow"></div>
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <a href="index.html" class="back-btn"><i class="fa fa-arrow-left"></i> Home</a>
+            <div class="brand">
+                <h1>Peserta Event</h1>
+            </div>
+            <div style="width: 40px;"></div>
+        </header>
+
+        <!-- Rules Section -->
+        <div class="rule-card">
+            <div class="rule-title">📜 Detail & Peraturan Event</div>
+            <div style="margin-bottom:16px;">
+                <strong style="color:white; display:block; margin-bottom:4px;">Periode & Waktu</strong>
+                <span style="color:var(--text-secondary); font-size:0.9rem;">1 Hari Bursa (Sesi 1 & 2) - Jam Pembukaan
+                    s/d Penutupan.</span>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <strong style="color:white; display:block; margin-bottom:4px;">Mekanisme Trading & Pemenang</strong>
+                <ul class="rule-list">
+                    <li>Bebas menggunakan <strong>Platform Sekuritas</strong> apa pun (Stockbit, Ajaib, IPOT, dll).</li>
+                    <li>Bebas memilih <strong>Emiten</strong> apa saja.</li>
+                    <li>Minimal volume transaksi <strong>1 Lot</strong>.</li>
+                    <li>Dicari <strong>5 Pemenang</strong> dengan persentase keuntungan tertinggi (<em>Highest
+                            Percentage Gain</em>).</li>
+                </ul>
+            </div>
+
+            <div>
+                <strong style="color:#ef4444; display:block; margin-bottom:4px;">⚠️ Syarat & Ketentuan (S&K)
+                    Tegas</strong>
+                <ul class="rule-list">
+                    <li><strong>Intraday Only:</strong> Transaksi Beli & Jual wajib <em>Match</em> di hari yang sama
+                        saat event.</li>
+                    <li><strong>Real Account Only:</strong> Wajib akun asli. Akun Demo/Paper Trade dilarang keras.</li>
+                    <li><strong>Bukti Transaksi:</strong> Wajib menyertakan Screenshot/Screenrecord asli.</li>
+                    <li><strong>Anti-Fraud:</strong> Indikasi pemalsuan atau kecurangan =
+                        <strong>DISKUALIFIKASI</strong>.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Participants List -->
+        <div class="glass-card">
+            <h2 style="color:white; font-size:1.1rem; margin-bottom:16px; display:flex; justify-content:space-between;">
+                Terdaftar
+                <span id="participant-count"
+                    style="font-size:0.85rem; color:var(--accent-blue); background:rgba(99,102,241,0.1); padding:2px 8px; border-radius:8px;">0
+                    Traders</span>
+            </h2>
+            <div id="p-list" class="participant-grid">
+                <!-- Loaded via JS -->
+                <div style="grid-column: 1/-1; text-align: center; padding: 20px;">
+                    <span class="spinner" style="width:20px;height:20px;border-width:2px;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/event.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkEventStatus('event-participants.html'); // Check if winner announced
+            loadParticipants('p-list');
+
+            // Auto refresh list every 30s
+            setInterval(() => loadParticipants('p-list'), 30000);
+        });
+    </script>
+</body>
+
+</html>

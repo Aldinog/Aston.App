@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Event Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-giant {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <div class="container">
+        <header class="app-header">
+            <a href="admin.html" class="back-btn">Back to Dashboard</a>
+            <h2>Event Manager</h2>
+        </header>
+
+        <!-- Status & Stats -->
+        <div class="admin-card">
+            <h3>Event Status</h3>
+            <div style="display:flex; gap:10px; margin-top:10px; margin-bottom:20px;">
+                <button onclick="setStatus('open')" class="glass-btn" id="btn-open">OPEN REGISTRATION</button>
+                <button onclick="setStatus('closed')" class="glass-btn" id="btn-close">CLOSE REGISTRATION</button>
+            </div>
+
+            <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
+                <div style="font-size:0.9rem; color:var(--text-secondary);">TOTAL PARTICIPANTS</div>
+                <div class="stat-giant" id="total-participants">0</div>
+                <button onclick="downloadCSV()" class="glass-btn"
+                    style="margin-top:10px; width:auto; padding:8px 16px;">
+                    Download CSV Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Winner Picker -->
+        <div class="admin-card input-card">
+            <h3 style="color:#f59e0b; margin-bottom:15px;">🏆 Select Winners</h3>
+            <p style="font-size:0.8rem; margin-bottom:15px;">Input EXACT Telegram usernames (with @). Use 'Publish' to
+                show Congrats Page.</p>
+
+            <div id="winner-inputs">
+                <div class="input-wrapper"><label>Winner #1 (1st Place)</label><input type="text" class="win-inp"
+                        placeholder="@user1"></div>
+                <div class="input-wrapper"><label>Winner #2</label><input type="text" class="win-inp"
+                        placeholder="@user2"></div>
+                <div class="input-wrapper"><label>Winner #3</label><input type="text" class="win-inp"
+                        placeholder="@user3"></div>
+                <div class="input-wrapper"><label>Winner #4</label><input type="text" class="win-inp"
+                        placeholder="@user4"></div>
+                <div class="input-wrapper"><label>Winner #5</label><input type="text" class="win-inp"
+                        placeholder="@user5"></div>
+            </div>
+
+            <button onclick="publishWinners()" class="glass-btn highlight-btn"
+                style="width:100%; color:white; font-weight:bold;">
+                PUBLISH WINNERS & ANNOUNCE 🚀
+            </button>
+        </div>
+    </div>
+
+    <script src="js/event.js"></script>
+    <script>
+        // Admin Logic
+        const API_ADMIN = '/api/event/control';
+        const token = localStorage.getItem('auth_token'); // Admin must be logged in
+
+        async function refreshStats() {
+            const res = await fetch('/api/event/participants');
+            const data = await res.json();
+            document.getElementById('total-participants').innerText = data.participants ? data.participants.length : 0;
+
+            // Highlight active status
+            document.getElementById('btn-open').style.borderColor = data.status === 'open' ? '#10b981' : 'transparent';
+            document.getElementById('btn-close').style.borderColor = data.status === 'closed' ? '#ef4444' : 'transparent';
+        }
+
+        async function setStatus(newStatus) {
+            if (!confirm(`Change status to ${newStatus}?`)) return;
+            try {
+                await fetch(API_ADMIN, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ action: 'set_status', payload: { status: newStatus } })
+                });
+                refreshStats();
+            } catch (e) { alert(e); }
+        }
+
+        async function publishWinners() {
+            const inputs = document.querySelectorAll('.win-inp');
+            const winners = Array.from(inputs).map(i => i.value.trim()).filter(v => v);
+
+            if (winners.length !== 5) {
+                if (!confirm(`You only entered ${winners.length} winners. Continue?`)) return;
+            }
+
+            try {
+                const res = await fetch(API_ADMIN, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ action: 'set_winners', payload: { winners } })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('Winners Published! Setup changed to "Announcement" mode.');
+                    refreshStats();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (e) { alert(e); }
+        }
+
+        async function downloadCSV() {
+            // Direct link or fetch blob? simpler to open window
+            // But we need auth. So fetch blob then download.
+            try {
+                const res = await fetch('/api/event/export', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const json = await res.json();
+                if (!json.success) return alert(json.error);
+
+                // CSV Converstion
+                const items = json.data;
+                const replacer = (key, value) => value === null ? '' : value;
+                const header = Object.keys(items[0]);
+                const csv = [
+                    header.join(','),
+                    ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+                ].join('\r\n');
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('hidden', '');
+                a.setAttribute('href', url);
+                a.setAttribute('download', 'event_participants.csv');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+            } catch (e) { alert(e); }
+        }
+
+        // Init
+        if (!token) { alert('Admin login required'); window.location.href = 'index.html'; }
+        refreshStats();
+    </script>
+</body>
+
+</html>

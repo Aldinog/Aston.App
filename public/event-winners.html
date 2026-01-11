@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CONGRATULATIONS - Event Winners</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            overflow: hidden;
+        }
+
+        /* Lock scroll for confetti */
+        .winner-card {
+            background: linear-gradient(145deg, rgba(255, 215, 0, 0.1), rgba(0, 0, 0, 0.4));
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            text-align: center;
+            transform: scale(1);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+        }
+
+        .rank-badge {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fbbf24;
+            text-shadow: 0 2px 10px rgba(251, 191, 36, 0.5);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .rank-1 .rank-badge {
+            font-size: 3rem;
+            color: #FFD700;
+        }
+
+        .rank-2 .rank-badge {
+            font-size: 2.5rem;
+            color: #C0C0C0;
+        }
+
+        .rank-3 .rank-badge {
+            font-size: 2.2rem;
+            color: #CD7F32;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Simple Confetti CSS */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            animation: fall linear forwards;
+            top: -10vh;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(110vh) rotate(720deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <div class="ambient-glow"
+        style="background: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.15), var(--bg-dark) 70%);"></div>
+
+    <div class="container" style="z-index: 10;">
+        <div style="text-align: center; margin-top: 40px; margin-bottom: 30px;">
+            <h1
+                style="font-family:'Space Grotesk'; font-size: 2.5rem; background: linear-gradient(to bottom, #fff, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                CONGRATULATIONS</h1>
+            <p style="color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase;">The Champions of
+                Trading Event</p>
+        </div>
+
+        <div id="winners-list" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Winners injected here -->
+            <div style="text-align:center; padding:50px;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-top:40px;">
+            <a href="index.html" class="glass-btn"
+                style="display:inline-block; padding:12px 24px; color:white; text-decoration:none;">Back to Home</a>
+        </div>
+    </div>
+
+    <!-- JS for Logic & Confetti -->
+    <script src="js/event.js"></script>
+    <script>
+        function createConfetti() {
+            const colors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#F472B6'];
+            for (let i = 0; i < 50; i++) {
+                const el = document.createElement('div');
+                el.classList.add('confetti');
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                el.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                el.style.animationDelay = (Math.random() * 2) + 's';
+                document.body.appendChild(el);
+            }
+        }
+
+        async function loadWinners() {
+            try {
+                const res = await fetch('/api/event/participants');
+                const data = await res.json();
+
+                if (data.participants && data.status === 'open') {
+                    // Fallback if accessed directly but not announced
+                    window.location.href = 'event-registration.html';
+                    return;
+                }
+
+                const container = document.getElementById('winners-list');
+                container.innerHTML = '';
+
+                if (data.winners && data.winners.length > 0) {
+                    data.winners.forEach((w, index) => {
+                        const rank = index + 1;
+                        const div = document.createElement('div');
+                        div.className = `glass-card winner-card rank-${rank}`;
+                        div.style.animationDelay = `${index * 0.2}s`;
+                        div.innerHTML = `
+                            <span class="rank-badge">#${rank}</span>
+                            <div style="font-size:1.5rem; font-weight:700; color:white;">${w.telegram_username}</div>
+                            <div style="font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:4px;">WINNER</div>
+                         `;
+                        container.appendChild(div);
+                    });
+                    createConfetti();
+                } else {
+                    container.innerHTML = '<div style="text-align:center; color:white;">Winners are being selected...</div>';
+                }
+
+            } catch (e) { console.error(e); }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadWinners);
+    </script>
+</body>
+
+</html>

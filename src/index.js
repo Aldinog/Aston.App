@@ -87,6 +87,10 @@ app.all('/api/watchlist', async (req, res) => {
   }
 });
 
+// 2.4 Event System
+const eventRouter = require('../api/event');
+app.use('/api/event', eventRouter);
+
 // 3. Static Files (Frontend Mini App)
 app.use(express.static(path.join(__dirname, '../public')));
 
