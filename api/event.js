@@ -10,7 +10,7 @@ const verifyToken = (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-aston');
         req.user = decoded;
 
         // Pass telegram_user_id to body for register convenience
