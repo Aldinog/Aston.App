@@ -175,16 +175,35 @@
                 const container = document.getElementById('winners-list');
                 container.innerHTML = '';
 
-                if (data.winners && data.winners.length > 0) {
-                    data.winners.forEach((w, index) => {
+                let winners = data.winners;
+
+                if (!winners || winners.length === 0) {
+                    // Placeholder Winners for Layout Preview & Motivation
+                    winners = [
+                        { telegram_username: '@CalonSultan', win_rank: 1 },
+                        { telegram_username: '@CalonJuara2', win_rank: 2 },
+                        { telegram_username: '@CalonJuara3', win_rank: 3 },
+                        { telegram_username: '@CalonJuara4', win_rank: 4 },
+                        { telegram_username: '@CalonJuara5', win_rank: 5 }
+                    ];
+                }
+
+                if (winners && winners.length > 0) {
+                    winners.forEach((w, index) => {
                         const rank = index + 1;
                         const div = document.createElement('div');
-                        div.className = `glass-card winner-card rank-${rank}`;
-                        div.style.animationDelay = `${index * 0.2}s`;
+                        div.className = `winner-card rank-${rank}`;
+                        div.style.animationDelay = `${index * 0.15}s`;
+
+                        let crownHtml = '';
+                        if (rank === 1) crownHtml = '<div class="crown-icon">👑</div>';
+
                         div.innerHTML = `
-                            <span class="rank-badge">#${rank}</span>
-                            <div style="font-size:1.5rem; font-weight:700; color:white;">${w.telegram_username}</div>
-                            <div style="font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:4px;">WINNER</div>
+                            ${crownHtml}
+                            <div class="winner-name">${w.telegram_username}</div>
+                            <div style="font-size:0.7rem; opacity:0.7; letter-spacing:1px; margin-top:5px; text-transform:uppercase;">
+                                ${rank === 1 ? 'CHAMPION' : rank <= 3 ? 'Runner Up' : 'Top 5'}
+                            </div>
                          `;
                         container.appendChild(div);
                     });
