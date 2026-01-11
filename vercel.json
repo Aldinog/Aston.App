@@ -26,6 +26,15 @@
       ]
     },
     {
+      "src": "/api/event/(.*)",
+      "dest": "api/event.js",
+      "methods": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ]
+    },
+    {
       "src": "/api/web",
       "dest": "api/web.js",
       "methods": [

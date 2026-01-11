@@ -59,7 +59,22 @@ router.get('/participants', eventController.getParticipants);
 router.post('/register', verifyToken, eventController.registerParticipant);
 
 // Admin Routes
+// Admin Routes
 router.post('/control', verifyToken, verifyAdmin, eventController.adminControl);
 router.get('/export', verifyToken, verifyAdmin, eventController.exportParticipants);
 
-module.exports = router;
+// Create Express App for Vercel & Local Compatibility
+const app = express();
+const cors = require('cors');
+
+// Middleware for this isolated app
+app.use(cors());
+app.use(express.json());
+
+// Dual Mount:
+// 1. Vercel receives full path '/api/event/...' -> Remove '/api/event' prefix before passing to router
+app.use('/api/event', router);
+// 2. Local (src/index.js) mounts this app at '/api/event' -> Strips prefix -> Receives '/' (or relative) -> Pass to router
+app.use('/', router);
+
+module.exports = app;
