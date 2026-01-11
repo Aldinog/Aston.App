@@ -189,7 +189,7 @@ exports.adminControl = async (req, res) => {
     }
 };
 
-// 4. Admin Export
+// 4. Admin Export (Server-side CSV)
 exports.exportParticipants = async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -199,8 +199,23 @@ exports.exportParticipants = async (req, res) => {
 
         if (error) throw error;
 
-        return res.json({ success: true, data });
+        // Generate CSV
+        if (!data || data.length === 0) {
+            return res.status(404).send('No data found');
+        }
+
+        const replacer = (key, value) => value === null ? '' : value;
+        const header = Object.keys(data[0]);
+        const csv = [
+            header.join(','),
+            ...data.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+        ].join('\r\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="event_participants.csv"');
+        return res.status(200).send(csv);
+
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        return res.status(500).send('Export failed: ' + err.message);
     }
 };

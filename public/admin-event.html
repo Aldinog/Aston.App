@@ -149,41 +149,17 @@
         async function downloadCSV() {
             if (!token) return alert('Invalid Token. Please relogin.');
 
-            try {
-                const res = await fetch('/api/event/export', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+            // Direct download using browser navigation (works better on mobile/WebView)
+            // We pass the token in the query string, which is now supported by the backend.
+            const url = `/api/event/export?token=${encodeURIComponent(token)}`;
 
-                if (res.status !== 200) {
-                    const errText = await res.text();
-                    throw new Error(`Server Error (${res.status}): ${errText}`);
-                }
+            // Open in new tab if possible, or same tab triggers download
+            window.location.href = url;
 
-                const json = await res.json();
-                if (!json.success) return alert(json.error);
-
-                // CSV Converstion
-                const items = json.data;
-                if (!items || items.length === 0) return alert('No data to export');
-
-                const replacer = (key, value) => value === null ? '' : value;
-                const header = Object.keys(items[0]);
-                const csv = [
-                    header.join(','),
-                    ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
-                ].join('\r\n');
-
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.setAttribute('hidden', '');
-                a.setAttribute('href', url);
-                a.setAttribute('download', 'event_participants.csv');
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-            } catch (e) { alert(e); }
+            // Optional UX
+            setTimeout(() => {
+                alert('Download should start automatically. If not, please check your permissions.');
+            }, 2000);
         }
 
         // Init
