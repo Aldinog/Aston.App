@@ -90,13 +90,41 @@ async function loadParticipants(containerId) {
         }
 
         if (result.participants && result.participants.length > 0) {
+            // Helper to censor 2 random chars
+            const censorUsername = (username) => {
+                if (!username || username.length <= 3) return username; // Too short to censor safely
+                let chars = username.split('');
+                let indices = [];
+                // Find candidates (skip @ and short prefixes if needed)
+                for (let i = 1; i < chars.length; i++) { // Skip index 0 (@)
+                    indices.push(i);
+                }
+
+                // Shuffle indices
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+
+                // Pick first 2 unique indices
+                if (indices.length >= 2) {
+                    chars[indices[0]] = '*';
+                    chars[indices[1]] = '*';
+                } else if (indices.length === 1) {
+                    chars[indices[0]] = '*';
+                }
+
+                return chars.join('');
+            };
+
             // Limit to top 100 or something if huge
             result.participants.forEach(p => {
                 const item = document.createElement('div');
                 item.className = 'glass-btn';
                 item.style.padding = '12px';
                 item.style.textAlign = 'center';
-                item.innerHTML = `<span class="btn-text" style="color:var(--accent-blue)">${p.telegram_username}</span>`;
+                const displayName = censorUsername(p.telegram_username);
+                item.innerHTML = `<span class="btn-text" style="color:var(--accent-blue)">${displayName}</span>`;
                 container.appendChild(item);
             });
 
