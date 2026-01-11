@@ -149,17 +149,30 @@
         async function downloadCSV() {
             if (!token) return alert('Invalid Token. Please relogin.');
 
-            // Direct download using browser navigation (works better on mobile/WebView)
-            // We pass the token in the query string, which is now supported by the backend.
-            const url = `/api/event/export?token=${encodeURIComponent(token)}`;
+            if (!confirm('Kirim data CSV ke chat Telegram Anda?')) return;
 
-            // Open in new tab if possible, or same tab triggers download
-            window.location.href = url;
+            const btn = document.querySelector('button[onclick="downloadCSV()"]');
+            const originalText = btn.innerText;
+            btn.innerText = 'Sending...';
+            btn.disabled = true;
 
-            // Optional UX
-            setTimeout(() => {
-                alert('Download should start automatically. If not, please check your permissions.');
-            }, 2000);
+            try {
+                const res = await fetch('/api/event/send-csv', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const json = await res.json();
+                if (json.success) {
+                    alert('✅ Sukses! File CSV sudah dikirim ke chat Telegram Anda.');
+                } else {
+                    alert('Gagal: ' + json.error);
+                }
+
+            } catch (e) { alert(e.message); }
+
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
 
         // Init

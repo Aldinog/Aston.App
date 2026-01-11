@@ -57,7 +57,8 @@ router.post('/register', verifyToken, eventController.registerParticipant);
 // Admin Routes
 // Admin Routes
 router.post('/control', verifyToken, verifyAdmin, eventController.adminControl);
-router.get('/export', verifyToken, verifyAdmin, eventController.exportParticipants);
+router.get('/export', verifyToken, verifyAdmin, eventController.exportParticipants); // Keep for legacy/browser
+router.post('/send-csv', verifyToken, verifyAdmin, eventController.sendParticipantsCsv); // New Bot Method
 
 // Create Express App for Vercel & Local Compatibility
 const app = express();

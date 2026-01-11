@@ -189,21 +189,21 @@ exports.adminControl = async (req, res) => {
     }
 };
 
-// 4. Admin Export (Server-side CSV)
-exports.exportParticipants = async (req, res) => {
+// 4. Send CSV to Admin Telegram
+exports.sendParticipantsCsv = async (req, res) => {
     try {
+        const adminId = req.user.telegram_user_id; // Current admin
+        // Or strictly process.env.ADMIN_ID if you want to force sending to OWNER
+
         const { data, error } = await supabase
             .from('event_participants')
             .select('*')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
+        if (!data || data.length === 0) return res.status(404).json({ error: 'No data to export' });
 
         // Generate CSV
-        if (!data || data.length === 0) {
-            return res.status(404).send('No data found');
-        }
-
         const replacer = (key, value) => value === null ? '' : value;
         const header = Object.keys(data[0]);
         const csv = [
@@ -211,11 +211,35 @@ exports.exportParticipants = async (req, res) => {
             ...data.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
         ].join('\r\n');
 
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename="event_participants.csv"');
-        return res.status(200).send(csv);
+        // Send via Telegram Bot API
+        const botToken = process.env.TELEGRAM_TOKEN;
+        if (!botToken) throw new Error('TELEGRAM_TOKEN missing');
+
+        const formData = new FormData();
+        formData.append('chat_id', adminId);
+        formData.append('caption', '📊 Data Peserta Event (Exported)');
+
+        // Append file using Blob
+        const blob = new Blob([csv], { type: 'text/csv' });
+        formData.append('document', blob, 'participants.csv');
+
+        const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const tgData = await tgRes.json();
+        if (!tgData.ok) {
+            throw new Error(`Telegram API Error: ${tgData.description}`);
+        }
+
+        return res.json({ success: true, message: 'File sent to your Telegram chat!' });
 
     } catch (err) {
-        return res.status(500).send('Export failed: ' + err.message);
+        console.error('[CSV SEND]', err);
+        return res.status(500).json({ error: err.message });
     }
 };
+
+// Legacy Export (Optional keep or remove)
+exports.exportParticipants = exports.sendParticipantsCsv;
