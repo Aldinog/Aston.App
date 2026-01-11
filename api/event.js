@@ -2,33 +2,26 @@ const express = require('express');
 const router = express.Router();
 const eventController = require('./controllers/eventController');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 // Middleware: Verify Token (Reuse logic or simplify)
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: 'No token' });
+    if (!authHeader) return res.status(401).json({ error: 'No token provided' });
 
     const token = authHeader.split(' ')[1];
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-aston');
         req.user = decoded;
 
-        // Pass telegram_user_id to body for register convenience
-        // But better to trust the token's ID than the body's
-        // We will OVERRIDE body.telegram_user_id with the one from Token to be safe
-        // However, user.telegram_user_id might be int or string.
-
-        // Important: check if decoded has telegram_user_id. The login payload has it.
-        // If not, we fetched it from DB in web.js. Here we simplify.
         if (decoded.telegram_user_id) {
             req.body.telegram_user_id = decoded.telegram_user_id;
-        } else if (decoded.userId) {
-            // ...
         }
 
         next();
     } catch (err) {
-        return res.status(401).json({ error: 'Invalid token' });
+        console.error('[AUTH ERROR]', err.message);
+        return res.status(401).json({ error: 'Invalid token', details: err.message });
     }
 };
 
