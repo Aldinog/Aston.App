@@ -137,11 +137,45 @@
         </div>
     </div>
 
+    <!-- CLOSED EVENT MODAL -->
+    <div id="closed-modal"
+        style="display:none; position:fixed; z-index:999; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.8); backdrop-filter:blur(5px);">
+        <div
+            style="background: linear-gradient(135deg, rgba(30, 41, 59, 1), rgba(15, 23, 42, 1)); margin: 15% auto; padding: 25px; border: 1px solid rgba(255,255,255,0.1); width: 85%; max-width: 400px; border-radius: 16px; text-align: center; box-shadow: 0 4px 30px rgba(0,0,0,0.5);">
+            <div style="font-size: 3rem; margin-bottom: 10px;">🔒</div>
+            <h2 style="font-family:'Space Grotesk'; color:white; margin-bottom:10px;">Registration Closed</h2>
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">
+                Maaf, pendaftaran event ini sudah ditutup. Anda masih bisa memantau jalannya event atau melihat
+                pemenang.
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <a href="event-participants.html" class="glass-btn btn-text" style="color:white; text-decoration:none;">
+                    👥 Lihat Peserta
+                </a>
+                <a href="event-winners.html" class="glass-btn btn-text"
+                    style="color:#fbbf24; text-decoration:none; border-color: rgba(251,191,36,0.5);">
+                    🏆 Lihat Pemenang
+                </a>
+            </div>
+        </div>
+    </div>
+
     <script src="js/event.js"></script>
     <script>
         // Init Logic
         document.addEventListener('DOMContentLoaded', async () => {
-            await checkEventStatus('event-registration.html');
+            const statusData = await checkEventStatus('event-registration.html');
+
+            // Show Modal if Closed or Off
+            if (statusData && (statusData.status === 'closed' || statusData.status === 'off')) {
+                const modal = document.getElementById('closed-modal');
+                if (modal) {
+                    modal.style.display = 'block';
+                    // Optional: Blur background
+                    document.querySelector('.container').style.filter = 'blur(5px)';
+                }
+            }
 
             // Auto-fill username if available from Telegram WebApp
             // Mocking for now or implementation detail

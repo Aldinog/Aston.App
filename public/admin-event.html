@@ -79,16 +79,32 @@
     <script>
         // Admin Logic
         const API_ADMIN = '/api/event/control';
-        const token = localStorage.getItem('aston_session_token'); // Admin must be logged in
+        // Ensure token is clean (no quotes)
+        let rawToken = localStorage.getItem('aston_session_token');
+        const token = rawToken ? rawToken.replace(/^"|"$/g, '') : null;
 
         async function refreshStats() {
-            const res = await fetch('/api/event/participants');
-            const data = await res.json();
-            document.getElementById('total-participants').innerText = data.participants ? data.participants.length : 0;
+            try {
+                const res = await fetch('/api/event/participants');
+                const data = await res.json();
+                document.getElementById('total-participants').innerText = data.participants ? data.participants.length : 0;
 
-            // Highlight active status
-            document.getElementById('btn-open').style.borderColor = data.status === 'open' ? '#10b981' : 'transparent';
-            document.getElementById('btn-close').style.borderColor = data.status === 'closed' ? '#ef4444' : 'transparent';
+                // Highlight active status Persistence
+                const btnOpen = document.getElementById('btn-open');
+                const btnClose = document.getElementById('btn-close');
+
+                // Reset styles
+                btnOpen.style.background = 'rgba(255,255,255,0.1)';
+                btnClose.style.background = 'rgba(255,255,255,0.1)';
+
+                if (data.status === 'open') {
+                    btnOpen.style.background = '#10b981'; // Green
+                    btnOpen.style.color = 'white';
+                } else {
+                    btnClose.style.background = '#ef4444'; // Red
+                    btnClose.style.color = 'white';
+                }
+            } catch (e) { console.error(e); }
         }
 
         async function setStatus(newStatus) {
@@ -117,17 +133,12 @@
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ action: 'set_winners', payload: { winners } })
                 });
-                const text = await res.text();
+                const text = await res.text(); // Debug raw
                 let result;
-                try {
-                    result = JSON.parse(text);
-                } catch (err) {
-                    console.error('Server response:', text);
-                    throw new Error('Server returned invalid JSON: ' + text.substring(0, 50) + '...');
-                }
+                try { result = JSON.parse(text); } catch (e) { throw new Error(text); }
 
                 if (result.success) {
-                    alert('Winners Published! Setup changed to "Announcement" mode.');
+                    alert(result.message);
                     refreshStats();
                 } else {
                     alert('Error: ' + result.error);
@@ -136,17 +147,25 @@
         }
 
         async function downloadCSV() {
-            // Direct link or fetch blob? simpler to open window
-            // But we need auth. So fetch blob then download.
+            if (!token) return alert('Invalid Token. Please relogin.');
+
             try {
                 const res = await fetch('/api/event/export', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+
+                if (res.status !== 200) {
+                    const errText = await res.text();
+                    throw new Error(`Server Error (${res.status}): ${errText}`);
+                }
+
                 const json = await res.json();
                 if (!json.success) return alert(json.error);
 
                 // CSV Converstion
                 const items = json.data;
+                if (!items || items.length === 0) return alert('No data to export');
+
                 const replacer = (key, value) => value === null ? '' : value;
                 const header = Object.keys(items[0]);
                 const csv = [
