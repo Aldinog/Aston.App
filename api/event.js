@@ -15,6 +15,7 @@ const verifyToken = (req, res, next) => {
         req.user = decoded;
 
         if (decoded.telegram_user_id) {
+            req.body = req.body || {}; // Safety check for GET requests
             req.body.telegram_user_id = decoded.telegram_user_id;
         }
 
