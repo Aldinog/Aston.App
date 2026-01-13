@@ -1185,11 +1185,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     // --- Start Polling ---
+    // --- Start Polling (Optimized) ---
     const startPolling = () => {
         if (pollingInterval) clearInterval(pollingInterval);
-        // Polling price every 15 seconds (Optimized for battery/performance)
-        // Backend cache is 60s, so 5s was redundant.
-        pollingInterval = setInterval(loadWatchlist, 15000);
+
+        // Initial Poll
+        loadWatchlist();
+
+        // Check if page is visible
+        if (document.visibilityState === 'visible') {
+            pollingInterval = setInterval(loadWatchlist, 15000); // 15s active
+        }
+
+        // Visibility Change Handler
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // Resume
+                loadWatchlist(); // Immediate update
+                if (pollingInterval) clearInterval(pollingInterval);
+                pollingInterval = setInterval(loadWatchlist, 15000);
+            } else {
+                // Pause
+                if (pollingInterval) clearInterval(pollingInterval);
+            }
+        });
     };
 
 
