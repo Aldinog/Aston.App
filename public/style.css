@@ -6,7 +6,7 @@
     padding: 0;
     -webkit-tap-highlight-color: transparent;
     /* Hardware Acceleration fix for some devices */
-    transform: translateZ(0); 
+    transform: translateZ(0);
 }
 
 body {
@@ -1829,4 +1829,131 @@ input:checked+.slider:before {
     color: #fff;
     text-align: center;
     font-weight: 600;
+}
+
+/* --- EVENT GLITCH ANIMATION --- */
+.glitch-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
+.glitch-text {
+    position: relative;
+    color: white;
+    font-weight: 800;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+    display: inline-block;
+}
+
+/* Glitch Effect Active State */
+.glitch-active {
+    animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+    color: white;
+}
+
+.glitch-active::before,
+.glitch-active::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    /* Force background to be transparent or match parent to avoid blocky overlay */
+    background-color: transparent;
+}
+
+.glitch-active::before {
+    left: 2px;
+    text-shadow: -2px 0 #ff00c1;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim-1 2s infinite linear alternate-reverse;
+}
+
+.glitch-active::after {
+    left: -2px;
+    text-shadow: -2px 0 #00fff9;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim-2 2s infinite linear alternate-reverse;
+}
+
+/* Animations */
+@keyframes glitch-anim-1 {
+    0% {
+        clip: rect(20px, 9999px, 16px, 0);
+    }
+
+    20% {
+        clip: rect(70px, 9999px, 89px, 0);
+    }
+
+    40% {
+        clip: rect(26px, 9999px, 4px, 0);
+    }
+
+    60% {
+        clip: rect(43px, 9999px, 86px, 0);
+    }
+
+    80% {
+        clip: rect(13px, 9999px, 41px, 0);
+    }
+
+    100% {
+        clip: rect(55px, 9999px, 6px, 0);
+    }
+}
+
+@keyframes glitch-anim-2 {
+    0% {
+        clip: rect(2px, 9999px, 80px, 0);
+    }
+
+    20% {
+        clip: rect(54px, 9999px, 12px, 0);
+    }
+
+    40% {
+        clip: rect(89px, 9999px, 48px, 0);
+    }
+
+    60% {
+        clip: rect(15px, 9999px, 3px, 0);
+    }
+
+    80% {
+        clip: rect(32px, 9999px, 95px, 0);
+    }
+
+    100% {
+        clip: rect(6px, 9999px, 64px, 0);
+    }
+}
+
+@keyframes glitch-skew {
+    0% {
+        transform: skew(0deg);
+    }
+
+    20% {
+        transform: skew(-2deg);
+    }
+
+    40% {
+        transform: skew(2deg);
+    }
+
+    60% {
+        transform: skew(-1deg);
+    }
+
+    80% {
+        transform: skew(1deg);
+    }
+
+    100% {
+        transform: skew(0deg);
+    }
 }

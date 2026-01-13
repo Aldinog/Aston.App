@@ -1264,6 +1264,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     await login();
     await loadWatchlist();
     fetchMarketSummary(); // Fetch immediately
+    // --- EVENT TEXT ANIMATION (GLITCH) ---
+    const startEventAnimation = () => {
+        const titleEl = document.getElementById('event-title');
+        if (!titleEl) return;
+
+        const phrases = [
+            "ASTON TRADING EVENT 🏆",
+            "BUKTIKAN SKILL MU 🔥",
+            "DAPATKAN HADIAHNYA 🎁",
+            "TOTAL HADIAH 1.5JT 💰",
+            "DAFTAR SEKARANG 🚀"
+        ];
+
+        let index = 0;
+
+        setInterval(() => {
+            // 1. Trigger Glitch
+            titleEl.classList.add('glitch-active');
+
+            // 2. Change Text halfway through glitch
+            setTimeout(() => {
+                index = (index + 1) % phrases.length;
+                titleEl.textContent = phrases[index];
+                titleEl.setAttribute('data-text', phrases[index]);
+            }, 300); // 300ms delay (match css animation peak)
+
+            // 3. Remove Glitch Effect
+            setTimeout(() => {
+                titleEl.classList.remove('glitch-active');
+            }, 800); // Total animation duration ~800ms visual
+
+        }, 3000); // Loop every 3 seconds
+    };
+    startEventAnimation();
+
     startPolling();
 });
 
