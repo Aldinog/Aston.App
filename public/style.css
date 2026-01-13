@@ -1960,10 +1960,6 @@ input:checked+.slider:before {
 
 /* --- BANNER CARD ANIMATIONS --- */
 
-.zoom-entrance {
-    animation: entry-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-}
-
 .glitch-card-active {
     animation: card-shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
     border-color: rgba(255, 255, 255, 0.8) !important;
@@ -1981,18 +1977,6 @@ input:checked+.slider:before {
     pointer-events: none;
     border-radius: inherit;
     animation: border-flash 0.2s 2;
-}
-
-@keyframes entry-pop {
-    0% {
-        opacity: 0;
-        transform: scale(0.9) translateY(10px);
-    }
-
-    100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
 }
 
 @keyframes card-shake {
