@@ -1265,8 +1265,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadWatchlist();
     fetchMarketSummary(); // Fetch immediately
     // --- EVENT TEXT ANIMATION (GLITCH) ---
+    // --- EVENT TEXT ANIMATION (GLITCH) ---
     const startEventAnimation = () => {
         const titleEl = document.getElementById('event-title');
+        const cardEl = document.getElementById('event-banner-card');
         if (!titleEl) return;
 
         const phrases = [
@@ -1280,22 +1282,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         let index = 0;
 
         setInterval(() => {
-            // 1. Trigger Glitch
+            // 1. Trigger Glitch (Text & Card)
             titleEl.classList.add('glitch-active');
+            if (cardEl) cardEl.classList.add('glitch-card-active');
 
             // 2. Change Text halfway through glitch
             setTimeout(() => {
                 index = (index + 1) % phrases.length;
                 titleEl.textContent = phrases[index];
                 titleEl.setAttribute('data-text', phrases[index]);
-            }, 300); // 300ms delay (match css animation peak)
+            }, 300);
 
             // 3. Remove Glitch Effect
             setTimeout(() => {
                 titleEl.classList.remove('glitch-active');
-            }, 800); // Total animation duration ~800ms visual
+                if (cardEl) cardEl.classList.remove('glitch-card-active');
+            }, 800);
 
-        }, 3000); // Loop every 3 seconds
+        }, 3000);
     };
     startEventAnimation();
 
