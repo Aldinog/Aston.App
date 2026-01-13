@@ -21,9 +21,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     let symbol = urlParams.get('symbol');
 
     if (!symbol && mode !== 'review_detail') {
-        addAiMessage("Error: No symbol provided.");
-        return;
+        const hasSymbol = false; // Just open empty chat or saved tab
     }
+
+    // --- TAB LOGIC ---
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const chatContainer = document.getElementById('chat-container');
+    const savedContainer = document.getElementById('saved-container');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // UI Toggle
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const target = btn.dataset.tab;
+            if (target === 'chat') {
+                chatContainer.style.display = 'flex';
+                savedContainer.style.display = 'none';
+            } else {
+                chatContainer.style.display = 'none';
+                savedContainer.style.display = 'flex';
+                fetchSavedAnalyses();
+            }
+        });
+    });
+
+    // Last content for saving
+    let lastAiContent = null;
+    let lastActionType = mode || 'analysis';
 
     // Auto-Normalize Symbol (BUVA -> BUVA.JK)
     // Assumes IDX context primarily.
@@ -154,6 +180,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const formatted = formatAiResponse(rawText);
                 addAiMessage(formatted);
 
+                // Save last content state
+                lastAiContent = rawText; // Save RAW for storage
+                lastActionType = action;
+
+                // Trigger Save Prompt
+                setTimeout(() => showSavePrompt(), 800);
+
             } else {
                 addAiMessage(`❌ Maaf, gagal mengambil data ${action} untuk ${symbol}.`);
             }
@@ -173,5 +206,195 @@ document.addEventListener('DOMContentLoaded', async () => {
             .replace(/__(.*?)__/g, '<u>$1</u>');
 
         return clean;
+    }
+
+    // --- SAVE FEATURE FUNCTIONS ---
+
+    function showSavePrompt() {
+        const promptDiv = document.createElement('div');
+        promptDiv.className = 'message ai';
+        promptDiv.id = 'save-prompt-bubble';
+        promptDiv.innerHTML = `
+            <div class="msg-bubble" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
+                <div style="margin-bottom:10px; font-size:0.9rem;">Apakah anda ingin menyimpan analisa ini?</div>
+                <div style="display:flex; gap:10px;">
+                    <button id="btn-save-yes" style="flex:1; padding:6px; border-radius:6px; background:#10b981; color:white; border:none; cursor:pointer;">Ya</button>
+                    <button id="btn-save-no" style="flex:1; padding:6px; border-radius:6px; background:rgba(255,255,255,0.1); color:#cbd5e1; border:none; cursor:pointer;">Tidak</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(promptDiv);
+        scrollToBottom();
+
+        document.getElementById('btn-save-yes').onclick = async () => {
+            promptDiv.remove();
+            await saveAnalysis();
+        };
+
+        document.getElementById('btn-save-no').onclick = () => {
+            promptDiv.remove();
+        };
+    }
+
+    async function saveAnalysis() {
+        if (!lastAiContent) return;
+
+        try {
+            const token = localStorage.getItem('aston_session_token');
+            const response = await fetch('/api/web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    action: 'save_analysis',
+                    symbol: symbol ? symbol.replace('.JK', '') : 'GENERAL',
+                    type: lastActionType,
+                    content: lastAiContent
+                })
+            });
+
+            const res = await response.json();
+            if (res.success) {
+                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+                // Show Popup / Toast
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+                    background: rgba(16, 185, 129, 0.9); color: white; padding: 10px 20px;
+                    border-radius: 20px; font-size: 0.9rem; z-index: 100; backdrop-filter: blur(4px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: fadeIn 0.3s;
+                 `;
+                toast.innerHTML = `<i class="fas fa-check-circle"></i> Analisa tersimpan! Cek tab Saved.`;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            } else {
+                alert('Gagal menyimpan: ' + res.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error saving analysis');
+        }
+    }
+
+    async function fetchSavedAnalyses() {
+        const savedContainer = document.getElementById('saved-container');
+        savedContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
+
+        try {
+            const token = localStorage.getItem('aston_session_token');
+            const response = await fetch('/api/web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ action: 'get_saved' })
+            });
+
+            const res = await response.json();
+            if (res.success) {
+                renderSavedList(res.data);
+            } else {
+                savedContainer.innerHTML = `<div style="text-align:center; color:#ef4444;">Error: ${res.error}</div>`;
+            }
+        } catch (e) {
+            console.error(e);
+            savedContainer.innerHTML = '<div style="text-align:center; color:#ef4444;">Connection Error</div>';
+        }
+    }
+
+    function renderSavedList(list) {
+        const savedContainer = document.getElementById('saved-container');
+        if (!list || list.length === 0) {
+            savedContainer.innerHTML = `
+                <div style="text-align:center; margin-top:50px; color:#64748b;">
+                    <i class="fas fa-bookmark" style="font-size:2rem; margin-bottom:10px;"></i>
+                    <p>Belum ada analisa tersimpan.</p>
+                </div>`;
+            return;
+        }
+
+        savedContainer.innerHTML = ''; // Clear loading
+        list.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'saved-item';
+
+            // Format Date
+            const date = new Date(item.created_at);
+            const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+            el.innerHTML = `
+                <div class="saved-header">
+                    <div class="saved-title">
+                        ${item.symbol} 
+                        <span class="saved-badge">${item.type}</span>
+                    </div>
+                    <div class="saved-time">${dateStr} • ${timeStr}</div>
+                </div>
+                <div style="font-size:0.85rem; color:#cbd5e1; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                    ${item.content.replace(/<[^>]*>?/gm, '').slice(0, 100)}...
+                </div>
+                <div class="saved-actions">
+                    <button class="action-btn btn-view" onclick="viewSavedDetail('${item.id}')">
+                        <i class="fas fa-eye"></i> Lihat
+                    </button>
+                    <button class="action-btn btn-delete" onclick="deleteSavedItem('${item.id}')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `;
+            savedContainer.appendChild(el);
+        });
+
+        // Expose functions globally for onclick handlers
+        window.viewSavedDetail = (id) => {
+            const item = list.find(i => i.id === id);
+            if (!item) return;
+
+            // Reuse Chat View for Detail but locked
+            // Switch back to chat tab visually but clear it first? No, maybe modal is better.
+            // Or overwrite Chat Container temporarily?
+            // Let's use a simplified approach: Overwrite Chat Container content with a "Back to Saved" button
+
+            const chatContainer = document.getElementById('chat-container');
+            const savedContainer = document.getElementById('saved-container');
+
+            chatContainer.innerHTML = ''; // Clear current chat
+
+            // Add Back Button Header override
+            const detailHeader = document.createElement('div');
+            detailHeader.style.cssText = 'padding:10px; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px; cursor:pointer; color:#94a3b8; font-size:0.9rem;';
+            detailHeader.innerHTML = `<i class="fas fa-arrow-left"></i> Kembali ke List`;
+            detailHeader.onclick = () => {
+                document.querySelector('[data-tab="saved"]').click(); // Trigger click to reload/reshow saved
+            };
+
+            chatContainer.appendChild(detailHeader);
+
+            // Add Content
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ai';
+            msgDiv.style.width = '100%';
+            msgDiv.innerHTML = `<div class="msg-bubble">${formatAiResponse(item.content)}</div>`;
+            chatContainer.appendChild(msgDiv);
+
+            // Switch Tab UI manually to 'Chat' (as view port) but keep 'Saved' active? 
+            // Better: Switch to Chat Tab but treat it as Detail View
+            document.querySelector('[data-tab="chat"]').click();
+            // Override the btn click logic slightly? No, standard logic hides savedContainer. 
+            // We just repopulated chatContainer.
+        };
+
+        window.deleteSavedItem = async (id) => {
+            if (!confirm('Hapus item ini?')) return;
+
+            try {
+                const token = localStorage.getItem('aston_session_token');
+                await fetch('/api/web', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ action: 'delete_saved', id: id })
+                });
+                fetchSavedAnalyses(); // Reload
+            } catch (e) { alert('Gagal menghapus'); }
+        };
     }
 });

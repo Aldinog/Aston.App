@@ -522,6 +522,77 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 console.error('Discovery Error:', err);
                 return res.status(500).json({ error: 'Failed to fetch discovery data' });
             }
+
+        // --- SAVED ANALYSIS FEATURES ---
+        case 'save_analysis':
+            const { type, content, symbol: saveSym } = req.body;
+            if (!content) return res.status(400).json({ error: 'Content is required to save.' });
+
+            try {
+                const { data: savedItem, error: saveErr } = await supabase
+                    .from('saved_analyses')
+                    .insert([{
+                        user_id: user.id,
+                        symbol: saveSym || 'GENERAL',
+                        type: type || 'analysis',
+                        content: content
+                    }])
+                    .select()
+                    .single();
+
+                if (saveErr) throw saveErr;
+
+                return res.json({ success: true, message: 'Analisa berhasil disimpan.', data: savedItem });
+            } catch (e) {
+                console.error('[SAVE ANALYSIS ERROR]', e.message);
+                return res.status(500).json({ error: 'Gagal menyimpan analisa.' });
+            }
+
+        case 'get_saved':
+            try {
+                // 1. Lazy Cleanup (Auto-delete older than 3 days)
+                const threeDaysAgo = new Date();
+                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+                await supabase
+                    .from('saved_analyses')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .lt('created_at', threeDaysAgo.toISOString());
+
+                // 2. Fetch Remaining
+                const { data: savedList, error: listErr } = await supabase
+                    .from('saved_analyses')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+
+                if (listErr) throw listErr;
+
+                return res.json({ success: true, data: savedList });
+            } catch (e) {
+                console.error('[GET SAVED ERROR]', e.message);
+                return res.status(500).json({ error: 'Gagal mengambil data saved.' });
+            }
+
+        case 'delete_saved':
+            const { id } = req.body;
+            if (!id) return res.status(400).json({ error: 'ID is required.' });
+
+            try {
+                const { error: delErr } = await supabase
+                    .from('saved_analyses')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', user.id); // Ensure ownership
+
+                if (delErr) throw delErr;
+
+                return res.json({ success: true, message: 'Item berhasil dihapus.' });
+            } catch (e) {
+                console.error('[DELETE SAVED ERROR]', e.message);
+                return res.status(500).json({ error: 'Gagal menghapus item.' });
+            }
     }
 
     if (!result) {

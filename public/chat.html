@@ -197,6 +197,117 @@
             padding: 10px 15px;
             color: white;
             outline: none;
+            padding: 10px 15px;
+            color: white;
+            outline: none;
+        }
+
+        /* --- TABS --- */
+        .top-tabs {
+            display: flex;
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 71px;
+            /* Height of header often around ~70px */
+            z-index: 49;
+            justify-content: space-around;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        /* Saved Container */
+        .saved-container {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .saved-item {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .saved-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .saved-title {
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .saved-time {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .saved-badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .saved-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 10px;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .btn-view {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-delete {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            margin-left: auto;
         }
     </style>
 </head>
@@ -217,8 +328,24 @@
         </div>
     </header>
 
+    </header>
+
+    <!-- NEW TABS -->
+    <div class="top-tabs" style="top:0; position:relative;">
+        <button class="tab-btn active" data-tab="chat">Chat AI</button>
+        <button class="tab-btn" data-tab="saved">Saved</button>
+    </div>
+
     <div class="chat-container" id="chat-container">
         <!-- Messages will appear here -->
+    </div>
+
+    <div class="saved-container" id="saved-container">
+        <!-- Saved Items will appear here -->
+        <div style="text-align:center; margin-top:50px; color:#64748b;">
+            <i class="fas fa-bookmark" style="font-size:2rem; margin-bottom:10px;"></i>
+            <p>Belum ada analisa tersimpan.</p>
+        </div>
     </div>
 
     <!-- Theme & Logic -->
