@@ -66,6 +66,7 @@
             line-height: 1.1;
             background: linear-gradient(180deg, #FFFFFF, #FFD700);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -110,6 +111,7 @@
             /* Border width */
             background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
@@ -139,6 +141,7 @@
             color: #FFD700;
             background: linear-gradient(90deg, #fff, #FFD700, #F59E0B, #fff);
             background-size: 200%;
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: shimmerText 3s linear infinite;
