@@ -613,6 +613,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
     return res.status(200).json({
         success: true,
         data: htmlOutput,
+        raw_data: result,
         active_theme: activeTheme
     });
 }

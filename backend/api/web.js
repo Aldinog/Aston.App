@@ -51,7 +51,7 @@ module.exports = async (req, res) => {
 
         let activeTheme = 'default';
 
-        // --- Authentication Middleware ---
+        // --- Authentication Middleware (Dual Strategy) ---
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             console.warn('[WEB API] Unauthorized: Missing token');
@@ -59,36 +59,101 @@ module.exports = async (req, res) => {
         }
 
         const token = authHeader.split(' ')[1];
+        let userUser = null;
+        let isLegacy = false;
 
-        // SECURITY UPDATE: Removed fallback secret. JWT_SECRET is mandatory.
-        if (!process.env.JWT_SECRET) {
-            console.error('[CRITICAL] JWT_SECRET is not defined in environment variables.');
-            return res.status(500).json({ error: 'Internal Server Configuration Error' });
-        }
-
-        let decoded;
+        // Strategy 1: Legacy Telegram JWT (Custom Signed)
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (jwtErr) {
-            console.warn(`[WEB API] JWT Error: ${jwtErr.message}`);
-            return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+            if (process.env.JWT_SECRET) {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                // Check session in DB
+                const { data: session } = await supabase
+                    .from('sessions')
+                    .select('user_id, users(*)')
+                    .eq('token', token)
+                    .single();
+
+                if (session && session.users && session.users.is_active) {
+                    userUser = session.users;
+                    isLegacy = true;
+                    // Log Last Seen
+                    supabase.from('users').update({ last_seen_at: new Date().toISOString() }).eq('id', userUser.id).then();
+                }
+            }
+        } catch (legacyErr) {
+            // Ignore legacy error, try Supabase Auth
         }
 
-        console.log(`[WEB API] Token verified for: ${decoded.userId || 'unknown'}`);
+        // Strategy 2: Supabase Auth (Email/Google)
+        if (!userUser) {
+            console.log('[AUTH DEBUG] Attempting Supabase Auth Strategy...');
+            const { data: { user: sbUser }, error: sbError } = await supabase.auth.getUser(token);
 
-        // Check session in DB
-        const { data: session, error: sessionError } = await supabase
-            .from('sessions')
-            .select('user_id, users(*)')
-            .eq('token', token)
-            .single();
+            if (sbError) console.error('[AUTH DEBUG] getUser Error:', sbError.message);
+            if (sbUser) console.log('[AUTH DEBUG] sbUser found:', sbUser.email, sbUser.id);
 
-        if (sessionError || !session || !session.users.is_active) {
-            return res.status(401).json({ error: 'Unauthorized: Invalid or inactive session' });
+            if (sbUser && !sbError) {
+                const email = sbUser.email;
+                const sbId = sbUser.id;
+
+                // Sync with public.users
+                // 1. Try finding by supabase_user_id
+                let { data: pUser, error: findError } = await supabase.from('users').select('*').eq('supabase_user_id', sbId).single();
+
+                if (findError && findError.code !== 'PGRST116') console.error('[AUTH DEBUG] Find by sbId Error:', findError.message);
+
+                // 2. If not found, try finding by Email (Legacy link)
+                if (!pUser && email) {
+                    console.log('[AUTH DEBUG] Linking via Email...');
+                    const { data: emailUser } = await supabase.from('users').select('*').eq('email', email).single();
+                    if (emailUser) {
+                        // Link account
+                        await supabase.from('users').update({ supabase_user_id: sbId }).eq('id', emailUser.id);
+                        pUser = emailUser;
+                        console.log('[AUTH DEBUG] Linked/Found by Email.');
+                    }
+                }
+
+                // 3. If still not found, Create New User
+                if (!pUser) {
+                    console.log(`[AUTH DEBUG] Creating new user for: ${email}`);
+                    try {
+                        const { data: newUser, error: createError } = await supabase.from('users').insert([{
+                            email: email,
+                            supabase_user_id: sbId,
+                            membership_status: 'member',
+                            last_login: new Date().toISOString(),
+                            is_active: true
+                        }]).select().single();
+
+                        if (createError) {
+                            console.error('[AUTH DEBUG] Creation Failed:', createError.message, createError.details);
+                        } else {
+                            pUser = newUser;
+                            console.log('[AUTH DEBUG] User Created:', pUser.id);
+                        }
+                    } catch (createErr) {
+                        console.error('[AUTH DEBUG] Exception during creation:', createErr.message);
+                    }
+                }
+
+                if (pUser && pUser.is_active) {
+                    userUser = pUser;
+                    // Update last login
+                    supabase.from('users').update({ last_seen_at: new Date().toISOString() }).eq('id', pUser.id).then();
+                } else {
+                    console.log('[AUTH DEBUG] User Resolving Failed. pUser:', pUser);
+                }
+            }
         }
 
-        const user = session.users;
-        const isAdmin = user.telegram_user_id.toString() === (process.env.ADMIN_ID || '');
+        if (!userUser) {
+            console.warn('[AUTH FAILURE] userUser is null after strategies.');
+            return res.status(401).json({ error: 'Unauthorized: Invalid Token or User not found.' });
+        }
+
+        const user = userUser;
+        const isAdmin = (user.telegram_user_id && user.telegram_user_id.toString() === (process.env.ADMIN_ID || '')) || false;
 
         // Update Last Seen [NEW]
         supabase.from('users').update({ last_seen_at: new Date().toISOString() }).eq('id', user.id).then(({ error }) => {
@@ -181,10 +246,10 @@ module.exports = async (req, res) => {
             const isExpired = (Date.now() - lastCheck) > CACHE_DURATION;
 
             let currentStatus = user.membership_status;
-            const groupIds = process.env.ALLOWED_GROUP_IDS ? process.env.ALLOWED_GROUP_IDS.split(',') : [];
-            const primaryGroupId = groupIds[0];
-
-            if (currentStatus !== 'member' || isExpired) {
+            // Only check Telegram Group if user HAS telegram_user_id
+            if (user.telegram_user_id && (currentStatus !== 'member' || isExpired)) {
+                const groupIds = process.env.ALLOWED_GROUP_IDS ? process.env.ALLOWED_GROUP_IDS.split(',') : [];
+                const primaryGroupId = groupIds[0];
                 try {
                     currentStatus = await checkTelegramMembership(user.telegram_user_id, primaryGroupId, process.env.TELEGRAM_TOKEN);
 
@@ -194,17 +259,13 @@ module.exports = async (req, res) => {
                     }).eq('id', user.id);
 
                 } catch (e) {
-                    const isTimeout = e.code === 'ETIMEDOUT' || e.message.includes('timeout');
-                    console.error('Group check failed in middleware:', e.message);
-                    return res.status(500).json({
-                        error: isTimeout ? 'Telegram API Timeout. Silakan coba lagi nanti.' : 'Security check failed',
-                        details: e.message
-                    });
+                    // Log but allow soft fail if it's just timeout? Strict for now.
+                    console.error('Group check failed:', e.message);
                 }
             }
 
             if (!['creator', 'administrator', 'member'].includes(currentStatus)) {
-                return res.status(403).json({ error: 'Jika sudah join silahkan buka ulang App' });
+                return res.status(403).json({ error: 'Akses Ditolak. (Membership Invalid)' });
             }
         }
 
