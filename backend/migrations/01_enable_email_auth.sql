@@ -10,6 +10,10 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
 -- 3. Add Supabase Auth UUID column to link with auth.users
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS supabase_user_id UUID UNIQUE;
 
--- 4. Create index for faster lookup
+-- 4. Make password_hash and username nullable (handled by Supabase or optional)
+ALTER TABLE public.users ALTER COLUMN password_hash DROP NOT NULL;
+ALTER TABLE public.users ALTER COLUMN username DROP NOT NULL;
+
+-- 5. Create index for faster lookup
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 CREATE INDEX IF NOT EXISTS idx_users_supabase_id ON public.users(supabase_user_id);

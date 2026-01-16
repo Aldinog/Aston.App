@@ -179,7 +179,7 @@ module.exports = async (req, res) => {
         const maintenanceWhitelist = settingsMap['maintenance_whitelist'] || [];
         const liveModeWhitelist = settingsMap['live_mode_whitelist'] || [];
         const cooldownMode = settingsMap['cooldown_mode'] === true || settingsMap['cooldown_mode'] === 'true';
-        const isWhitelisted = maintenanceWhitelist.includes(user.telegram_user_id.toString());
+        const isWhitelisted = user.telegram_user_id && maintenanceWhitelist.includes(user.telegram_user_id.toString());
 
         // Auto-Disable Logic
         if (isMaintenance && maintenanceEndTime) {
