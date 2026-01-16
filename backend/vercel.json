@@ -6,6 +6,9 @@
     },
     "api/cron/scanner.js": {
       "maxDuration": 60
+    },
+    "api/cron/generate_signal.js": {
+      "maxDuration": 60
     }
   },
   "routes": [
@@ -56,6 +59,14 @@
       "methods": [
         "POST",
         "GET"
+      ]
+    },
+    {
+      "src": "/api/cron/signal",
+      "dest": "api/cron/generate_signal.js",
+      "methods": [
+        "GET",
+        "POST"
       ]
     },
     {

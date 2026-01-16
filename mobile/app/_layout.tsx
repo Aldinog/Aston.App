@@ -5,6 +5,7 @@ import { View, ActivityIndicator } from 'react-native';
 import "../global.css";
 import { LogBox } from "react-native";
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+import { usePushNotifications } from '../hooks/usePushNotifications'; // Import Hook
 
 // Ignore specific logs including Reanimated's strict mode warning
 LogBox.ignoreLogs([

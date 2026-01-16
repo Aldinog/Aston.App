@@ -18,6 +18,7 @@ function computeIndicators(candles) {
   const ema21 = ti.EMA.calculate({ period: 21, values: closes });
   const ema10 = ti.EMA.calculate({ period: 10, values: closes });
   const ema20 = ti.EMA.calculate({ period: 20, values: closes });
+  const ema200 = ti.EMA.calculate({ period: 200, values: closes });
 
   const rsi9 = ti.RSI.calculate({ period: 9, values: closes });
   const rsi14 = ti.RSI.calculate({ period: 14, values: closes });
@@ -42,6 +43,8 @@ function computeIndicators(candles) {
   const atr14 = ti.ATR.calculate({ period: 14, high: highs, low: lows, close: closes });
   const smaVol20 = ti.SMA.calculate({ period: 20, values: volumes });
 
+  // ... existing code ...
+
   const latest = {
     latestClose: closes[closes.length - 1],
     latestVolume: volumes[volumes.length - 1],
@@ -52,6 +55,7 @@ function computeIndicators(candles) {
     EMA21: ema21.length ? ema21[ema21.length - 1] : undefined,
     EMA10: ema10.length ? ema10[ema10.length - 1] : undefined,
     EMA20: ema20.length ? ema20[ema20.length - 1] : undefined,
+    EMA200: ema200.length ? ema200[ema200.length - 1] : undefined,
     RSI9: rsi9.length ? rsi9[rsi9.length - 1] : undefined,
     RSI: rsi14.length ? rsi14[rsi14.length - 1] : undefined,
     MACD: macd.length ? macd[macd.length - 1] : undefined,

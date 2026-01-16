@@ -1,4 +1,5 @@
-import { View, Text, ScrollView } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
 import PromoBanner from '../../components/PromoBanner';
@@ -9,10 +10,27 @@ import TrendingList from '../../components/TrendingList';
 
 export default function Home() {
     const { colorScheme } = useColorScheme();
+    const [refreshing, setRefreshing] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        // Simulate a slight delay to show the spinner
+        setTimeout(() => {
+            setRefreshKey(prev => prev + 1); // Trigger re-mount of children
+            setRefreshing(false);
+        }, 1500);
+    }, []);
 
     return (
         <SafeAreaView className={`flex-1 bg-background ${colorScheme}`} edges={['top']}>
-            <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+            <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ paddingBottom: 100 }}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colorScheme === 'dark' ? '#fff' : '#000'} />
+                }
+            >
                 {/* 1. Header Section */}
                 <View className="px-6 pt-2 pb-4 flex-row justify-between items-center mb-2 mt-12">
                     <View>
@@ -30,11 +48,11 @@ export default function Home() {
                 {/* 3. Market Pulse */}
                 <View className="px-6 mt-2 mb-4">
                     <Text className="text-foreground text-lg font-bold mb-3">Market Pulse</Text>
-                    <MarketPulse />
+                    <MarketPulse key={`pulse-${refreshKey}`} />
                 </View>
 
                 {/* 4. AI Signal Card */}
-                <AISignalCard />
+                <AISignalCard key={`signal-${refreshKey}`} />
 
                 {/* 5. Quick Actions */}
                 <QuickMenu />
@@ -45,7 +63,7 @@ export default function Home() {
                         <Text className="text-foreground text-lg font-bold">Trending Now 🔥</Text>
                         <Text className="text-primary text-xs font-bold">View All</Text>
                     </View>
-                    <TrendingList />
+                    <TrendingList key={`trend-${refreshKey}`} />
                 </View>
             </ScrollView>
         </SafeAreaView>
