@@ -1,7 +1,7 @@
 const YahooFinance = require('yahoo-finance2').default;
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical', 'yahooSurvey'] });
-const { supabase } = require('../../src/utils/supabase');
-const { broadcastNotification } = require('../../src/utils/notification');
+const { supabase } = require('../../utils/supabase');
+const { broadcastNotification } = require('../../utils/notification');
 
 module.exports = async (req, res) => {
     console.log('[CRON] Starting Signal Monitoring (TP/SL Check)...');

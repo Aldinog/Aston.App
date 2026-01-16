@@ -1,4 +1,4 @@
-const { supabase } = require('../../src/utils/supabase');
+const { supabase } = require('../../utils/supabase');
 
 // Helper: Check event status
 // Helper: Check event status

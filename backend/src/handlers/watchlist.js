@@ -1,6 +1,6 @@
-const { supabase } = require('../src/utils/supabase');
-const { fetchQuote } = require('../src/utils/yahoofinance');
-const { validateTelegramInitData } = require('../src/utils/auth');
+const { supabase } = require('../utils/supabase');
+const { fetchQuote } = require('../utils/yahoofinance');
+const { validateTelegramInitData } = require('../utils/auth');
 
 module.exports = async (req, res) => {
     // --- CORS Headers ---
@@ -101,7 +101,7 @@ module.exports = async (req, res) => {
 
             if (missingSparklines.length > 0) {
                 console.log(`[WATCHLIST] Backfilling ${missingSparklines.length} symbols...`);
-                const { getPersistentCandles } = require('../src/utils/persistence');
+                const { getPersistentCandles } = require('../utils/persistence');
                 // Fire and forget (limited parallel)
                 const limitParallel = 5;
                 Promise.all(missingSparklines.slice(0, limitParallel).map(s => getPersistentCandles(s, '1d', 30))).catch(err => console.error(err));

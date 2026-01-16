@@ -1,5 +1,5 @@
-const { validateTelegramInitData } = require('../../src/utils/auth');
-const { supabase } = require('../../src/utils/supabase');
+const { validateTelegramInitData } = require('../../utils/auth');
+const { supabase } = require('../../utils/supabase');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 require('dotenv').config();

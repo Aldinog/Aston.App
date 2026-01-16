@@ -1,6 +1,6 @@
-const { fetchHarga } = require('../../src/utils/harga');
-const { analyzeStock } = require('../../src/utils/analisys');
-const { analyzeWithAI } = require('../../src/utils/ai');
+const { fetchHarga } = require('../../utils/harga');
+const { analyzeStock } = require('../../utils/analisys');
+const { analyzeWithAI } = require('../../utils/ai');
 const {
     fetchHistorical,
     analyzeProxyBrokerActivity,
@@ -11,12 +11,12 @@ const {
     formatProfile,
     fetchSectors,
     fetchDiscoveryData
-} = require('../../src/utils/yahoofinance');
-const { getPersistentCandles } = require('../../src/utils/persistence');
-const { computeIndicators, formatIndicatorsForPrompt } = require('../../src/utils/indicators');
-const { calculateAvg, formatAvgReport } = require('../../src/utils/avg');
-const { markdownToTelegramHTML } = require('../../src/utils/telegram');
-const { supabase } = require('../../src/utils/supabase');
+} = require('../../utils/yahoofinance');
+const { getPersistentCandles } = require('../../utils/persistence');
+const { computeIndicators, formatIndicatorsForPrompt } = require('../../utils/indicators');
+const { calculateAvg, formatAvgReport } = require('../../utils/avg');
+const { markdownToTelegramHTML } = require('../../utils/telegram');
+const { supabase } = require('../../utils/supabase');
 const moment = require('moment-timezone');
 
 // Cache for live quotes to prevent hitting Yahoo Finance too often
@@ -160,7 +160,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             break;
 
         case 'quote':
-            const { fetchQuote } = require('../../src/utils/yahoofinance');
+            const { fetchQuote } = require('../../utils/yahoofinance');
             let syms = symbol;
             if (typeof symbol === 'string' && symbol.includes(',')) {
                 syms = symbol.split(',').map(s => s.trim());
@@ -218,7 +218,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             break;
 
         case 'chart':
-            const { getChartData } = require('../../src/utils/charting');
+            const { getChartData } = require('../../utils/charting');
             const interval = req.body.interval || '1d';
             const limit = req.body.limit || 300;
             console.log(`[API] Processing chart request for ${symbol} interval ${interval} limit ${limit}`);
@@ -259,7 +259,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
             }
 
             try {
-                const { fetchHistorical } = require('../../src/utils/yahoofinance');
+                const { fetchHistorical } = require('../../utils/yahoofinance');
                 const liveCandles = await fetchHistorical(symbol, { interval: intervalLive, limit: 2, forceRefresh: true });
 
                 if (liveCandles && liveCandles.length > 0) {
@@ -292,7 +292,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 return res.status(200).json({ success: true, data: cachedSignal });
             }
 
-            const { generateSignal } = await import('../../src/utils/signal.js');
+            const { generateSignal } = await import('../../utils/signal.js');
             result = await generateSignal(symbol);
             // Save to cache
             if (result && !result.includes('❌')) {
@@ -309,7 +309,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 }
             }
 
-            const { generateReview } = await import('../../src/utils/review.js');
+            const { generateReview } = await import('../../utils/review.js');
             const { entry, sl, mode } = req.body;
             if (!entry || !mode) {
                 return res.status(400).json({ error: "❌ Data entry dan action (BUY/SELL) wajib diisi." });
@@ -434,7 +434,7 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                     .in('sector', targetYSectors)
                     .limit(20);
 
-                const { fetchQuote } = require('../../src/utils/yahoofinance');
+                const { fetchQuote } = require('../../utils/yahoofinance');
                 const results = [];
                 const addedSymbols = new Set();
 

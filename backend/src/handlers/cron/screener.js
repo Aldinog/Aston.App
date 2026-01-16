@@ -1,5 +1,5 @@
 const { Telegraf } = require('telegraf');
-const { runScreener, getTopMovers } = require('../../src/utils/screener');
+const { runScreener, getTopMovers } = require('../../utils/screener');
 require('dotenv').config();
 
 const bot = new Telegraf(process.env.TELEGRAM_TOKEN);

@@ -1,4 +1,4 @@
-const { supabase } = require('../src/utils/supabase');
+const { supabase } = require('../utils/supabase');
 const jwt = require('jsonwebtoken');
 const { handleAdminAction } = require('./controllers/adminController');
 const { handleMarketAction } = require('./controllers/marketController');

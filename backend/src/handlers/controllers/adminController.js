@@ -1,4 +1,4 @@
-const { supabase } = require('../../src/utils/supabase');
+const { supabase } = require('../../utils/supabase');
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -285,7 +285,7 @@ async function handleAdminAction(req, res, action, user) {
 
     if (action === 'admin/diagnostics/check-connection') {
         try {
-            const { fetchQuote } = require('../../src/utils/yahoofinance');
+            const { fetchQuote } = require('../../utils/yahoofinance');
             const quote = await fetchQuote('BBCA.JK');
             const ok = !!quote;
             return res.status(200).json({

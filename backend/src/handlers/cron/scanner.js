@@ -1,8 +1,8 @@
 // api/cron/scanner.js
-const { supabase } = require('../../src/utils/supabase');
-const { fetchHistorical } = require('../../src/utils/yahoofinance');
-const { computeIndicators, detectAdvancedSignal, getLatestSignal } = require('../../src/utils/indicators');
-const { getChartData } = require('../../src/utils/charting');
+const { supabase } = require('../../utils/supabase');
+const { fetchHistorical } = require('../../utils/yahoofinance');
+const { computeIndicators, detectAdvancedSignal, getLatestSignal } = require('../../utils/indicators');
+const { getChartData } = require('../../utils/charting');
 const axios = require('axios');
 const moment = require('moment-timezone');
 

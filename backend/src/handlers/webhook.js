@@ -3,17 +3,17 @@ const { Telegraf } = require("telegraf");
 require("dotenv").config();
 
 
-const { fetchHistorical } = require("../src/utils/yahoofinance");
-const { fetchBrokerSummaryWithFallback } = require("../src/utils/yahoofinance");
-const { analyzeProxyBrokerActivity } = require("../src/utils/yahoofinance");
-const { formatProxyBrokerActivity } = require("../src/utils/yahoofinance");
-const { fetchFundamentals, formatFundamentals } = require("../src/utils/yahoofinance");
-const { computeIndicators, formatIndicatorsForPrompt } = require("../src/utils/indicators");
-const { analyzeWithAI } = require("../src/utils/ai");
-const { analyzeStock } = require("../src/utils/analisys");
-const { isAllowedGroup, allowedGroups } = require("../src/utils/groupControl");
-const { fetchHarga } = require('../src/utils/harga');
-const { generateReview } = require('../src/utils/review');
+const { fetchHistorical } = require("../utils/yahoofinance");
+const { fetchBrokerSummaryWithFallback } = require("../utils/yahoofinance");
+const { analyzeProxyBrokerActivity } = require("../utils/yahoofinance");
+const { formatProxyBrokerActivity } = require("../utils/yahoofinance");
+const { fetchFundamentals, formatFundamentals } = require("../utils/yahoofinance");
+const { computeIndicators, formatIndicatorsForPrompt } = require("../utils/indicators");
+const { analyzeWithAI } = require("../utils/ai");
+const { analyzeStock } = require("../utils/analisys");
+const { isAllowedGroup, allowedGroups } = require("../utils/groupControl");
+const { fetchHarga } = require('../utils/harga');
+const { generateReview } = require('../utils/review');
 const axios = require('axios');
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -25,7 +25,7 @@ const bot = new Telegraf(TELEGRAM_TOKEN || "dummy_token");
 const {
   markdownToTelegramHTML,
   splitMessageSafe
-} = require("../src/utils/telegram");
+} = require("../utils/telegram");
 
 async function sendLongMessage(ctx, html) {
   const parts = splitMessageSafe(html);

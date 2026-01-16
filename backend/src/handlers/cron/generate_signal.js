@@ -1,9 +1,9 @@
 const YahooFinance = require('yahoo-finance2').default;
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical', 'yahooSurvey'] });
-const { computeIndicators } = require('../../src/utils/indicators');
-const { analyzeWithAI } = require('../../src/utils/ai');
-const { supabase } = require('../../src/utils/supabase');
-const { broadcastNotification } = require('../../src/utils/notification');
+const { computeIndicators } = require('../../utils/indicators');
+const { analyzeWithAI } = require('../../utils/ai');
+const { supabase } = require('../../utils/supabase');
+const { broadcastNotification } = require('../../utils/notification');
 
 // --- CONSTANTS ---
 const IDX80_LIST = [
