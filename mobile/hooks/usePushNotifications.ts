@@ -39,18 +39,23 @@ async function registerForPushNotificationsAsync() {
     }
 
     if (finalStatus !== 'granted') {
-        console.log('Failed to get push token for push notification!');
         return;
     }
 
     // Get the token
-    // projectId is implicit if using Expo Go or correctly configured EAS
     try {
         const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+
+        if (!projectId) {
+            console.warn("⚠️ Push Notification Warning: Project ID belum dikonfigurasi (EAS). Notifikasi tidak akan berjalan di Expo Go.");
+            return null;
+        }
+
         const pushTokenString = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
         return pushTokenString;
     } catch (e) {
-        console.error("Error getting push token:", e);
+        // Suppress error in Expo Go if due to missing config
+        console.warn("Skipping Push Token fetch (Dev Mode / No Config)");
         return null;
     }
 }
@@ -80,10 +85,25 @@ export function usePushNotifications() {
     }
 
     useEffect(() => {
-        registerForPushNotificationsAsync().then(token => {
-            setExpoPushToken(token ?? undefined);
+        let isMounted = true;
+
+        const registerAndSave = async () => {
+            const token = await registerForPushNotificationsAsync();
+            if (isMounted) setExpoPushToken(token ?? undefined);
+
             if (token) {
-                saveToken(token);
+                // Try saving immediately
+                await saveToken(token);
+            }
+        };
+
+        registerAndSave();
+
+        // Listen for Auth Changes (Login) to re-save token
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' && session?.user && expoPushToken) {
+                console.log("User signed in, re-saving push token...");
+                await saveToken(expoPushToken);
             }
         });
 
@@ -96,6 +116,8 @@ export function usePushNotifications() {
         });
 
         return () => {
+            isMounted = false;
+            authListener.subscription.unsubscribe();
             if (notificationListener.current) {
                 notificationListener.current.remove();
             }
@@ -103,7 +125,7 @@ export function usePushNotifications() {
                 responseListener.current.remove();
             }
         };
-    }, []);
+    }, [expoPushToken]); // Dependency on expoPushToken to save when it becomes available
 
     return {
         expoPushToken,

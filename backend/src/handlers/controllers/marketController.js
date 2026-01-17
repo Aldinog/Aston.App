@@ -28,9 +28,12 @@ let sectorsCache = null;
 let sectorsCacheTime = 0;
 const SECTOR_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
-// Cache for Sector Emitents (per sector)
-const sectorEmitentsCache = new Map();
-const SECTOR_EMITENTS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+// Cache for Trending AI
+let trendingCache = {
+    data: null,
+    timestamp: 0,
+    TTL: 15 * 60 * 1000 // 15 minutes
+};
 
 // Dynamic import helper for marked
 let marked;
@@ -133,12 +136,42 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
 
     let result = '';
 
-    const actionsWithoutSymbol = ['sectors', 'sector-emitents', 'discovery', 'save_analysis', 'get_saved', 'delete_saved'];
+    const actionsWithoutSymbol = ['sectors', 'sector-emitents', 'discovery', 'save_analysis', 'get_saved', 'delete_saved', 'screener', 'top-gainers', 'trending-ai'];
     if (!symbol && !actionsWithoutSymbol.includes(action)) {
         return res.status(400).json({ error: 'Symbol is required' });
     }
 
     switch (action) {
+        case 'trending-ai':
+            // 1. Check Cache
+            if (trendingCache.data && (Date.now() - trendingCache.timestamp < trendingCache.TTL)) {
+                console.log('[CACHE HIT] Trending AI Data');
+                return res.status(200).json({
+                    success: true,
+                    data: trendingCache.data,
+                    cached: true
+                });
+            }
+
+            // 2. Run Screener (if cache miss)
+            try {
+                console.log('[CACHE MISS] Fetching fresh Trending AI data...');
+                const { runScreener } = require('../../utils/screener');
+                const results = await runScreener();
+                const topPicks = results.slice(0, 5);
+
+                trendingCache.data = topPicks;
+                trendingCache.timestamp = Date.now();
+
+                return res.status(200).json({ success: true, data: topPicks });
+            } catch (err) {
+                console.error('Trending AI Error:', err);
+                if (trendingCache.data) {
+                    return res.status(200).json({ success: true, data: trendingCache.data, staled: true });
+                }
+                return res.status(500).json({ error: 'Failed to fetch trending data' });
+            }
+
         case 'price': // Replaced by Profile
         case 'profile':
             const profileData = await fetchProfile(symbol);
@@ -593,29 +626,58 @@ async function handleMarketAction(req, res, action, user, activeTheme, liveModeW
                 console.error('[DELETE SAVED ERROR]', e.message);
                 return res.status(500).json({ error: 'Gagal menghapus item.' });
             }
-    }
 
-    if (!result) {
-        return null; // Not handled
-    }
+        case 'screener':
+            try {
+                const { sector } = req.body;
+                const { runScreener } = require('../../utils/screener');
+                console.log(`[API] Running Screener... Sector: ${sector || 'All'}`);
 
-    // Default HTML/Markdown formatting
-    const isHtml = /<[a-z][\s\S]*>/i.test(result);
-    let htmlOutput = result;
-    if (!isHtml) {
-        const markedFn = await loadMarked();
-        htmlOutput = markedFn(result, { breaks: true });
-    }
-    if (!htmlOutput.includes('<p>') && !htmlOutput.includes('<br>')) {
-        htmlOutput = htmlOutput.replace(/\n/g, '<br>');
-    }
+                const results = await runScreener(sector);
+                return res.status(200).json({
+                    success: true,
+                    data: results
+                });
+            } catch (err) {
+                console.error('Screener Error:', err);
+                return res.status(500).json({ error: 'Failed to run market analysis' });
+            }
 
-    return res.status(200).json({
-        success: true,
-        data: htmlOutput,
-        raw_data: result,
-        active_theme: activeTheme
-    });
+        case 'top-gainers':
+            try {
+                const { getTopMovers } = require('../../utils/screener');
+                const { gainers } = await getTopMovers();
+                return res.status(200).json({
+                    success: true,
+                    data: gainers || []
+                });
+            } catch (err) {
+                console.error('Top Gainers Error:', err);
+                return res.status(500).json({ error: 'Failed to fetch top gainers' });
+            }
+
+            if (!result) {
+                return null; // Not handled
+            }
+
+            // Default HTML/Markdown formatting
+            const isHtml = /<[a-z][\s\S]*>/i.test(result);
+            let htmlOutput = result;
+            if (!isHtml) {
+                const markedFn = await loadMarked();
+                htmlOutput = markedFn(result, { breaks: true });
+            }
+            if (!htmlOutput.includes('<p>') && !htmlOutput.includes('<br>')) {
+                htmlOutput = htmlOutput.replace(/\n/g, '<br>');
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: htmlOutput,
+                raw_data: result,
+                active_theme: activeTheme
+            });
+    }
 }
 
 module.exports = { handleMarketAction };

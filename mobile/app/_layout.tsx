@@ -1,4 +1,5 @@
 import { Slot, Stack } from "expo-router";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
@@ -23,12 +24,15 @@ export default function RootLayout() {
         // Bisa tambah font custom disini nanti
     });
 
+    // Initialize Push Notifications
+    usePushNotifications();
+
     if (!fontsLoaded) {
         // return <Slot />; // Or custom splash
     }
 
     return (
-        <>
+        <GestureHandlerRootView style={{ flex: 1 }}>
             <StatusBar style="light" backgroundColor="#0f172a" />
             <Stack screenOptions={{
                 headerShown: false,
@@ -37,6 +41,6 @@ export default function RootLayout() {
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             </Stack>
-        </>
+        </GestureHandlerRootView>
     );
 }

@@ -18,6 +18,7 @@ function computeIndicators(candles) {
   const ema21 = ti.EMA.calculate({ period: 21, values: closes });
   const ema10 = ti.EMA.calculate({ period: 10, values: closes });
   const ema20 = ti.EMA.calculate({ period: 20, values: closes });
+  const ema50 = ti.EMA.calculate({ period: 50, values: closes });
   const ema200 = ti.EMA.calculate({ period: 200, values: closes });
 
   const rsi9 = ti.RSI.calculate({ period: 9, values: closes });
@@ -55,6 +56,7 @@ function computeIndicators(candles) {
     EMA21: ema21.length ? ema21[ema21.length - 1] : undefined,
     EMA10: ema10.length ? ema10[ema10.length - 1] : undefined,
     EMA20: ema20.length ? ema20[ema20.length - 1] : undefined,
+    EMA50: ema50.length ? ema50[ema50.length - 1] : undefined,
     EMA200: ema200.length ? ema200[ema200.length - 1] : undefined,
     RSI9: rsi9.length ? rsi9[rsi9.length - 1] : undefined,
     RSI: rsi14.length ? rsi14[rsi14.length - 1] : undefined,
