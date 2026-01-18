@@ -39,18 +39,27 @@ module.exports = async (req, res) => {
     try {
         // --- GET: Fetch Watchlist & Prices ---
         if (method === 'GET') {
-            const { data: list, error } = await supabase
-                .from('user_watchlist')
-                .select('symbol')
-                .eq('user_id', user.id);
+            let symbols = [];
 
-            if (error) throw error;
+            // 1. Check if symbols are provided in Query Params (Local Storage Mode)
+            if (req.query.symbols) {
+                const rawSymbols = req.query.symbols.split(',');
+                // Filter empty strings and normalize
+                symbols = rawSymbols.filter(s => s.trim().length > 0).map(s => s.trim().toUpperCase());
+            } else {
+                // 2. Fallback: Fetch from Database (Legacy/Sync Mode)
+                const { data: list, error } = await supabase
+                    .from('user_watchlist')
+                    .select('symbol')
+                    .eq('user_id', user.id);
 
-            if (!list || list.length === 0) {
-                return res.json({ success: true, data: [] });
+                if (error) throw error;
+                if (list) symbols = list.map(i => i.symbol);
             }
 
-            const symbols = list.map(i => i.symbol);
+            if (symbols.length === 0) {
+                return res.json({ success: true, data: [] });
+            }
 
             // --- SMART CACHING STRATEGY ---
             // 1. Check App Settings for 'force_weekend_fetch'
@@ -73,22 +82,22 @@ module.exports = async (req, res) => {
             // 1. Fetch Sparklines (Always try DB first, batch fetch)
             let sparklineMap = new Map();
             try {
-                // Fetch candles for all symbols (last ~60 days to ensure we get 20 clean daily candles)
+                // Fetch candles for all symbols (H1 interval, ordered to get latest)
                 const { data: dbCandles, error: candleError } = await supabase
                     .from('stock_candles')
                     .select('symbol, close, time')
                     .in('symbol', symbols.map(s => s.includes('.') ? s : `${s}.JK`))
-                    .eq('interval', '1d')
-                    .order('time', { ascending: true }); // Ascending for correct graph
+                    .eq('interval', '1h') // Changed 1d -> 1h
+                    .order('time', { ascending: true });
 
                 if (!candleError && dbCandles) {
                     dbCandles.forEach(c => {
                         const cleanSym = c.symbol.replace('.JK', '');
                         if (!sparklineMap.has(cleanSym)) sparklineMap.set(cleanSym, []);
-                        // Keep last 20
                         const arr = sparklineMap.get(cleanSym);
                         arr.push(c.close);
-                        if (arr.length > 20) arr.shift(); // Keep window small
+                        // Changed limit 20 -> 30 for H1
+                        if (arr.length > 30) arr.shift();
                     });
                 }
             } catch (e) { console.error('[WATCHLIST] Sparkline Fetch Error:', e); }
@@ -96,15 +105,16 @@ module.exports = async (req, res) => {
             // Trigger Backfill for missing sparklines
             const missingSparklines = symbols.filter(s => {
                 const sl = sparklineMap.get(s);
-                return !sl || sl.length < 5;
+                return !sl || sl.length < 10; // Check if less than 10 (buffer)
             });
 
             if (missingSparklines.length > 0) {
-                console.log(`[WATCHLIST] Backfilling ${missingSparklines.length} symbols...`);
+                console.log(`[WATCHLIST] Backfilling ${missingSparklines.length} symbols (H1)...`);
                 const { getPersistentCandles } = require('../utils/persistence');
                 // Fire and forget (limited parallel)
                 const limitParallel = 5;
-                Promise.all(missingSparklines.slice(0, limitParallel).map(s => getPersistentCandles(s, '1d', 30))).catch(err => console.error(err));
+                // Fetch 1h candles, limit ~50 to ensure we have enough for 30
+                Promise.all(missingSparklines.slice(0, limitParallel).map(s => getPersistentCandles(s, '1h', 50))).catch(err => console.error(err));
             }
 
             // 2. Fetch Prices (Differs based on Weekend/Force)
@@ -185,14 +195,14 @@ module.exports = async (req, res) => {
             }
 
             // --- 3. MERGE FINAL RESPONSE ---
-            const populated = list.map(item => {
-                const targetSym = item.symbol.replace('.JK', '');
+            const populated = symbols.map(sym => {
+                const targetSym = sym.replace('.JK', '');
                 const q = finalQuotes.find(x => (x.symbol && x.symbol.replace('.JK', '') === targetSym));
                 const sl = sparklineMap.get(targetSym) || [];
 
                 if (!q) {
                     return {
-                        symbol: item.symbol,
+                        symbol: sym,
                         price: 0, change: 0, changePercent: 0, prevClose: 0,
                         sparkline: sl
                     };
@@ -210,7 +220,7 @@ module.exports = async (req, res) => {
                 if (p === 0 && pc !== 0) p = pc;
 
                 return {
-                    symbol: item.symbol,
+                    symbol: sym,
                     price: p,
                     change: c,
                     changePercent: cp,
