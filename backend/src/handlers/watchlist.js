@@ -81,13 +81,18 @@ module.exports = async (req, res) => {
 
             // 1. Fetch Sparklines (Always try DB first, batch fetch)
             let sparklineMap = new Map();
+            let lastKnownPrices = new Map(); // fallback map
+            // Cutoff: 7 Days ago (in seconds) to prevent mixing old data
+            const cutoffTime = Math.floor(Date.now() / 1000) - (14 * 24 * 3600); // 14 days safe buffer for holidays
+
             try {
                 // Fetch candles for all symbols (H1 interval, ordered to get latest)
                 const { data: dbCandles, error: candleError } = await supabase
                     .from('stock_candles')
                     .select('symbol, close, time')
                     .in('symbol', symbols.map(s => s.includes('.') ? s : `${s}.JK`))
-                    .eq('interval', '1h') // Changed 1d -> 1h
+                    .eq('interval', '1h')
+                    .gte('time', cutoffTime) // Only recent data
                     .order('time', { ascending: true });
 
                 if (!candleError && dbCandles) {
@@ -95,27 +100,59 @@ module.exports = async (req, res) => {
                         const cleanSym = c.symbol.replace('.JK', '');
                         if (!sparklineMap.has(cleanSym)) sparklineMap.set(cleanSym, []);
                         const arr = sparklineMap.get(cleanSym);
-                        arr.push(c.close);
+
+                        // Capture Latest Price for Fallback (since ordered by time ascending)
+                        lastKnownPrices.set(cleanSym, c.close);
+
+                        // Push object first to check time later, or just value? 
+                        // We need time for staleness check
+                        arr.push({ c: c.close, t: c.time });
+
                         // Changed limit 20 -> 30 for H1
                         if (arr.length > 30) arr.shift();
                     });
                 }
             } catch (e) { console.error('[WATCHLIST] Sparkline Fetch Error:', e); }
 
-            // Trigger Backfill for missing sparklines
+            // Trigger Backfill for missing OR STALE sparklines
+            const currentUnix = Math.floor(Date.now() / 1000);
+            const STALE_THRESHOLD = 3600 * 2; // 2 Hours
+
             const missingSparklines = symbols.filter(s => {
                 const sl = sparklineMap.get(s);
-                return !sl || sl.length < 10; // Check if less than 10 (buffer)
+                if (!sl || sl.length < 5) return true; // Not enough data
+
+                // Check Staleness of the LAST candle
+                const lastCandle = sl[sl.length - 1];
+
+                // --- WEEKEND OPTIMIZATION ---
+                // If it's Weekend (Sat/Sun), market is closed.
+                // We shouldn't flag Friday's data as "stale" just because it's > 2 hours old.
+                // Only trigger update if it's NOT weekend, or if the data is egregiously old (e.g. > 3 days)
+                if (isWeekend) {
+                    const THREE_DAYS = 3600 * 24 * 3;
+                    if (currentUnix - lastCandle.t > THREE_DAYS) return true; // Truly missing/old
+                } else {
+                    // Weekday logic: Check aggressively (2 hours)
+                    // Persistence will handle if market is actually closed (e.g. night)
+                    if (currentUnix - lastCandle.t > STALE_THRESHOLD) return true;
+                }
+
+                return false;
             });
 
             if (missingSparklines.length > 0) {
-                console.log(`[WATCHLIST] Backfilling ${missingSparklines.length} symbols (H1)...`);
+                console.log(`[WATCHLIST] Backfilling/Refreshing ${missingSparklines.length} symbols (H1)...`);
                 const { getPersistentCandles } = require('../utils/persistence');
                 // Fire and forget (limited parallel)
                 const limitParallel = 5;
-                // Fetch 1h candles, limit ~50 to ensure we have enough for 30
                 Promise.all(missingSparklines.slice(0, limitParallel).map(s => getPersistentCandles(s, '1h', 50))).catch(err => console.error(err));
             }
+
+            // Map back to simple number array for frontend
+            sparklineMap.forEach((entry, key) => {
+                sparklineMap.set(key, entry.map(e => e.c));
+            });
 
             // 2. Fetch Prices (Differs based on Weekend/Force)
             let finalQuotes = [];
@@ -130,10 +167,16 @@ module.exports = async (req, res) => {
                     .in('symbol', symbols);
 
                 const validCacheMap = new Map();
+                const allCacheMap = new Map(); // Store ALL cache regardless of freshness
                 const symbolsToFetch = [];
 
                 symbols.forEach(sym => {
                     const cached = cachedCandidates ? cachedCandidates.find(c => c.symbol === sym || c.symbol === `${sym}.JK`) : null;
+
+                    if (cached) {
+                        allCacheMap.set(sym, cached); // Save to backup map
+                    }
+
                     let isPriceFresh = false;
 
                     if (cached && cached.last_updated) {
@@ -150,31 +193,36 @@ module.exports = async (req, res) => {
 
                 let newFetchedData = [];
                 if (symbolsToFetch.length > 0) {
-                    console.log(`[WATCHLIST] Fetching prices for ${symbolsToFetch.length} symbols...`);
-                    const quotes = await fetchQuote(symbolsToFetch);
-                    const quoteArray = Array.isArray(quotes) ? quotes : (quotes ? [quotes] : []);
+                    // console.log(`[WATCHLIST] Fetching prices for ${symbolsToFetch.length} symbols...`);
+                    try {
+                        const quotes = await fetchQuote(symbolsToFetch);
+                        const quoteArray = Array.isArray(quotes) ? quotes : (quotes ? [quotes] : []);
 
-                    const cacheUpdates = quoteArray.map(q => ({
-                        symbol: q.symbol.replace('.JK', ''),
-                        price: q.regularMarketPrice || q.regularMarketPreviousClose || 0,
-                        change: q.regularMarketChange || 0,
-                        changepercent: q.regularMarketChangePercent || 0,
-                        prevclose: q.regularMarketPreviousClose || 0,
-                        last_updated: new Date().toISOString()
-                    }));
+                        const cacheUpdates = quoteArray.map(q => ({
+                            symbol: q.symbol.replace('.JK', ''),
+                            price: q.regularMarketPrice || q.regularMarketPreviousClose || 0,
+                            change: q.regularMarketChange || 0,
+                            changepercent: q.regularMarketChangePercent || 0,
+                            prevclose: q.regularMarketPreviousClose || 0,
+                            last_updated: new Date().toISOString()
+                        }));
 
-                    if (cacheUpdates.length > 0) {
-                        // Upsert cache (Price only)
-                        const { error: upsertError } = await supabase.from('stock_price_cache').upsert(cacheUpdates);
-                        if (upsertError) console.error('[UPSERT ERROR]', upsertError.message);
+                        if (cacheUpdates.length > 0) {
+                            // Upsert cache (Price only)
+                            const { error: upsertError } = await supabase.from('stock_price_cache').upsert(cacheUpdates);
+                            if (upsertError) console.error('[UPSERT ERROR]', upsertError.message);
+                        }
+                        newFetchedData = cacheUpdates;
+                    } catch (e) {
+                        console.error('[WATCHLIST] YF Quote Error (Using Fallback):', e.message);
                     }
-                    newFetchedData = cacheUpdates;
                 }
 
                 // Combine Sources
                 finalQuotes = symbols.map(sym => {
                     const fromNew = newFetchedData.find(x => x.symbol === sym);
-                    return fromNew || validCacheMap.get(sym);
+                    // PRIORITY: 1. New Fetch, 2. Valid Cache, 3. Stale Cache (Fallback)
+                    return fromNew || validCacheMap.get(sym) || allCacheMap.get(sym);
                 }).filter(x => x);
 
             } else {
@@ -199,11 +247,13 @@ module.exports = async (req, res) => {
                 const targetSym = sym.replace('.JK', '');
                 const q = finalQuotes.find(x => (x.symbol && x.symbol.replace('.JK', '') === targetSym));
                 const sl = sparklineMap.get(targetSym) || [];
+                const fallbackPrice = lastKnownPrices.get(targetSym) || 0;
 
                 if (!q) {
                     return {
                         symbol: sym,
-                        price: 0, change: 0, changePercent: 0, prevClose: 0,
+                        price: fallbackPrice,
+                        change: 0, changePercent: 0, prevClose: fallbackPrice,
                         sparkline: sl
                     };
                 }
@@ -218,6 +268,9 @@ module.exports = async (req, res) => {
                 if (pc === undefined && q.prevClose !== undefined) pc = q.prevClose;
 
                 if (p === 0 && pc !== 0) p = pc;
+
+                // ULTIMATE FALLBACK: If API returns 0 (market closed/error), use Candle Fallback
+                if (p === 0 && fallbackPrice !== 0) p = fallbackPrice;
 
                 return {
                     symbol: sym,

@@ -154,7 +154,11 @@ async function getPersistentCandles(symbol, interval = '1d', limit = 300) {
             }));
         }
     } catch (err) {
-        console.error('[PERSISTENCE] YF Sync Error:', err.message);
+        if (err.message && err.message.includes('User is unable to access')) {
+            console.warn(`[PERSISTENCE] YF Access Denied for ${query}. Using DB Fallback.`);
+        } else {
+            console.error('[PERSISTENCE] YF Sync Error:', err.message);
+        }
     }
 
     return candles;

@@ -47,6 +47,8 @@ app.post('/api/web', async (req, res) => {
 
 // 2.1 Auth Login (Mini App Login)
 const loginHandler = require('./handlers/auth/login');
+const callbackHandler = require('./handlers/auth/callback');
+
 app.all('/api/auth/login', async (req, res) => {
   try {
     await loginHandler(req, res);
@@ -54,6 +56,11 @@ app.all('/api/auth/login', async (req, res) => {
     console.error('[SERVER] Login Error:', err.message);
     if (!res.headersSent) res.status(500).json({ error: 'Internal Server Error' });
   }
+});
+
+// 2.1.1 Auth Callback Proxy (Supabase -> Mobile Deep Link)
+app.get('/api/auth/callback', async (req, res) => {
+  await callbackHandler(req, res);
 });
 
 // 2.2 Cron Tasks (Scanner & Screener)

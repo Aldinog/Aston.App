@@ -1,0 +1,7 @@
+# Standard EAS Ignore
+/backend
+/.gemini
+/node_modules
+/.git
+.DS_Store
+Thumbs.db

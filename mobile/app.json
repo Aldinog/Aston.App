@@ -22,10 +22,21 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.aston.trade"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0f0f71eb-dbc2-456a-8113-7c95ba2e31c4"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/bd5f3334-7447-41ed-8caa-a6f01c52ef49",
+      "fallbackToCacheTimeout": 0
+    },
+    "owner": "aston-trade"
   }
 }

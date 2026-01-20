@@ -264,7 +264,7 @@ module.exports = async (req, res) => {
                 }
             }
 
-            if (!['creator', 'administrator', 'member'].includes(currentStatus)) {
+            if (!['creator', 'administrator', 'member', 'free', 'standard', 'pro'].includes(currentStatus)) {
                 return res.status(403).json({ error: 'Akses Ditolak. (Membership Invalid)' });
             }
         }
